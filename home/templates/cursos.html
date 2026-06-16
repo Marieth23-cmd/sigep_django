@@ -47,11 +47,7 @@
             step="0.01"
         >
 
-        <select id="escolaCurso">
-            <option value="">Selecionar escola</option>
-            <!-- Preenchida via JavaScript -->
-        </select>
-
+        
         <div class="modal-footer">
 
             <button
@@ -184,7 +180,7 @@ async function salvarCurso() {
         const dados = {
             nome: nomeCurso,
             propina_mensal: propinaMensalCurso,
-            id_escola: escolaCurso,
+            id_escola: 1,
         };
 
         await axios.post(API_BASE + 'cursos/', dados);
