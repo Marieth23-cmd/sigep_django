@@ -168,13 +168,16 @@
 let pagamentos = [];
 let alunos = [];
 
-document.addEventListener('DOMContentLoaded', function() {
+function iniciarPaginaPagamentos() {
     const mesAtual = new Date().getMonth() + 1;
     document.getElementById('mesPagamento').value = mesAtual;
     carregarPagamentos();
     carregarAlunos();
     carregarEstatisticas();
-});
+}
+
+iniciarPaginaPagamentos();
+
 
 async function carregarPagamentos() {
     document.getElementById('loadingPagamentos').classList.add('active');
