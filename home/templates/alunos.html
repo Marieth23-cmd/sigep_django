@@ -70,7 +70,6 @@
     </div>
 
 </div>
-
 <!-- MODAL -->
 <div class="modal-overlay" id="modalAluno" onclick="fecharModalAluno(event)">
 
@@ -79,33 +78,18 @@
         <h3>Registar Novo Aluno</h3>
         <div id="mensagemModal"></div>
 
-        <input
-            type="text"
-            id="nomealuno"
-            placeholder="Nome completo"
-        >
-
-        <input
-            type="number"
-            id="numeroAluno"
-            placeholder="Número do aluno"
-        >
+        <input type="text" id="nomealuno" placeholder="Nome completo">
+        <input type="number" id="numeroAluno" placeholder="Número do aluno">
 
         <select id="turmaAluno">
             <option value="">Selecionar turma</option>
-            <!-- Preenchida via JavaScript -->
         </select>
 
         <select id="bolsaAluno">
             <option value="">Selecionar bolsa (opcional)</option>
-            <!-- Preenchida via JavaScript -->
         </select>
 
-        <input
-            type="text"
-            id="telefoneEncarregado"
-            placeholder="Telefone do encarregado"
-        >
+        <input type="text" id="telefoneEncarregado" placeholder="Telefone do encarregado">
 
         <select id="sexoAluno">
             <option value="">Selecionar sexo</option>
@@ -114,42 +98,29 @@
         </select>
 
         <div class="modal-footer">
-
-            <button
-                class="btn-cancelar"
-                onclick="fecharModalAluno()"
-            >
-                Cancelar
-            </button>
-
-            <button class="btn-guardar" onclick="salvarAluno()">
-                Registar
-            </button>
-
+            <button class="btn-cancelar" onclick="fecharModalAluno()">Cancelar</button>
+            <button class="btn-guardar" onclick="salvarAluno()">Registar</button>
         </div>
 
     </div>
-
 </div>
 
 <script>
 
 let alunosFiltrados = [];
 
-// Carregar alunos ao iniciar
+// ✅ APENAS UM DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
     carregarAlunos();
-    carregarTurmas();
+    carregarTurmasSelect();
     carregarBolsas();
 });
 
-// Função para carregar alunos
 async function carregarAlunos() {
     document.getElementById('loadingAlunos').classList.add('active');
     try {
         const response = await axios.get(API_BASE + 'alunos/');
         alunosFiltrados = response.data.results || response.data;
-        
         document.getElementById('alunosCount').textContent = alunosFiltrados.length + ' alunos registados';
         preencherTabelaAlunos(alunosFiltrados);
     } catch (error) {
@@ -160,7 +131,6 @@ async function carregarAlunos() {
     }
 }
 
-// Função para preencher tabela de alunos
 function preencherTabelaAlunos(alunos) {
     const tbody = document.getElementById('alunosBody');
     tbody.innerHTML = '';
@@ -177,14 +147,8 @@ function preencherTabelaAlunos(alunos) {
             <td>${aluno.nome}</td>
             <td>${aluno.turma_nome || '-'}</td>
             <td>${aluno.escola_nome || '-'}</td>
-            <td>
-                ${aluno.bolsa_nome ? `<span class="badge-bolsa">${aluno.bolsa_nome}</span>` : '—'}
-            </td>
-            <td>
-                <span class="status-${aluno.estado.toLowerCase()}">
-                    ${aluno.estado}
-                </span>
-            </td>
+            <td>${aluno.bolsa_nome ? `<span class="badge-bolsa">${aluno.bolsa_nome}</span>` : '—'}</td>
+            <td><span class="status-${aluno.estado.toLowerCase()}">${aluno.estado}</span></td>
             <td>
                 <button class="btn-menu" onclick="editarAluno(${aluno.id_aluno})">
                     <i class="fas fa-edit"></i>
@@ -195,31 +159,28 @@ function preencherTabelaAlunos(alunos) {
     });
 }
 
-// Função para filtrar alunos
 function filtrarAlunos() {
     const termo = document.getElementById('pesquisaAluno').value.toLowerCase();
-    const filtrados = alunosFiltrados.filter(aluno => 
+    const filtrados = alunosFiltrados.filter(aluno =>
         aluno.nome.toLowerCase().includes(termo) ||
         aluno.numero_aluno.toString().includes(termo)
     );
     preencherTabelaAlunos(filtrados);
 }
 
-// Função para carregar turmas
-async function carregarTurmas() {
+// ✅ NOME ÚNICO — sem conflito com a página de turmas
+async function carregarTurmasSelect() {
     try {
         const response = await axios.get(API_BASE + 'turmas/');
         const turmas = response.data.results || response.data;
         const select = document.getElementById('turmaAluno');
         select.innerHTML = '<option value="">Selecionar turma</option>';
-        
+
         turmas.forEach(turma => {
             const option = document.createElement('option');
             option.value = turma.id_turma;
-            option.textContent = turma.nome + ' - ' + turma.periodo;
-            if (turma.id_escola) {
-                option.setAttribute('data-id-escola', turma.id_escola);
-            }
+            option.textContent = turma.nome + ' — ' + (turma.curso_nome || '') + ' (' + turma.periodo + ')';
+            option.setAttribute('data-id-escola', turma.id_escola || turma.id_escola_id);
             select.appendChild(option);
         });
     } catch (error) {
@@ -227,14 +188,13 @@ async function carregarTurmas() {
     }
 }
 
-// Função para carregar bolsas
 async function carregarBolsas() {
     try {
         const response = await axios.get(API_BASE + 'bolsas/');
         const bolsas = response.data.results || response.data;
         const select = document.getElementById('bolsaAluno');
         select.innerHTML = '<option value="">Selecionar bolsa (opcional)</option>';
-        
+
         bolsas.forEach(bolsa => {
             const option = document.createElement('option');
             option.value = bolsa.id_bolsa;
@@ -246,19 +206,17 @@ async function carregarBolsas() {
     }
 }
 
-// Função para abrir modal
 function abrirModalAluno() {
     document.getElementById('modalAluno').style.display = 'flex';
 }
 
-// Função para fechar modal
 function fecharModalAluno(event) {
     if (event && event.target.id !== 'modalAluno') return;
     document.getElementById('modalAluno').style.display = 'none';
     limparFormulario();
 }
 
-// Função para limpar formulário
+// ✅ SEM dataNascimento
 function limparFormulario() {
     document.getElementById('nomealuno').value = '';
     document.getElementById('numeroAluno').value = '';
@@ -269,7 +227,6 @@ function limparFormulario() {
     document.getElementById('mensagemModal').innerHTML = '';
 }
 
-// Função para salvar aluno
 async function salvarAluno() {
     const nomealuno = document.getElementById('nomealuno').value;
     const numeroAluno = document.getElementById('numeroAluno').value;
@@ -280,37 +237,33 @@ async function salvarAluno() {
         return;
     }
 
+    const turmaSelect = document.getElementById('turmaAluno');
+    const selectedOption = turmaSelect.options[turmaSelect.selectedIndex];
+    const idEscola = selectedOption ? parseInt(selectedOption.getAttribute('data-id-escola'), 10) : null;
+
+    if (!idEscola) {
+        mostrarMensagem('mensagemModal', 'Não foi possível determinar a escola da turma', 'error');
+        return;
+    }
+
+    const dados = {
+        nome: nomealuno,
+        numero_aluno: parseInt(numeroAluno, 10),
+        id_turma: parseInt(turmaAluno, 10),
+        id_bolsa: null,
+        telefone_encarregado: document.getElementById('telefoneEncarregado').value || null,
+        sexo: document.getElementById('sexoAluno').value || null,
+        estado: 'ACTIVO',
+        id_escola: idEscola,
+    };
+
     try {
-        const turmaSelect = document.getElementById('turmaAluno');
-        const selectedTurmaOption = turmaSelect.options[turmaSelect.selectedIndex];
-        const idEscola = selectedTurmaOption
-            ? parseInt(selectedTurmaOption.getAttribute('data-id-escola'), 10)
-            : null;
-
-        if (!idEscola) {
-            mostrarMensagem('mensagemModal', 'Não foi possível determinar a escola da turma', 'error');
-            return;
-        }
-
-        const dados = {
-            nome: nomealuno,
-            numero_aluno: parseInt(numeroAluno, 10),
-            id_turma: parseInt(turmaAluno, 10),
-            id_bolsa: null, // sem bolsa por agora
-            telefone_encarregado: document.getElementById('telefoneEncarregado').value || null,
-            sexo: document.getElementById('sexoAluno').value || null,
-            estado: 'ACTIVO',
-            id_escola: idEscola,
-        };
-
         await axios.post(API_BASE + 'alunos/', dados);
         mostrarMensagem('mensagemModal', 'Aluno registado com sucesso!', 'success');
-
         setTimeout(() => {
             fecharModalAluno();
             carregarAlunos();
         }, 1500);
-
     } catch (error) {
         let mensagem = 'Erro ao registar aluno';
         if (error.response?.data) {
@@ -321,22 +274,20 @@ async function salvarAluno() {
     }
 }
 
-// Função para editar aluno
 function editarAluno(id) {
     alert('Funcionalidade de edição em desenvolvimento');
 }
 
-// Função para aplicar filtros
 function aplicarFiltros() {
     alert('Filtros em desenvolvimento');
 }
 
-// Função para mostrar mensagens
 function mostrarMensagem(elementId, mensagem, tipo) {
     const elemento = document.getElementById(elementId);
     elemento.className = tipo;
     elemento.innerHTML = mensagem;
 }
+
 </script>
 
 
