@@ -146,6 +146,9 @@ async function carregarCursosSelect() {
             const option = document.createElement('option');
             option.value = curso.id_curso;
             option.textContent = curso.nome;
+            if (curso.id_escola) {
+                option.setAttribute('data-id-escola', curso.id_escola);
+            }
             select.appendChild(option);
         });
     } catch (error) {
@@ -166,10 +169,19 @@ async function salvarTurma() {
     }
 
     try {
+        const cursoSelect = document.getElementById('cursoTurma');
+        const selectedOption = cursoSelect.options[cursoSelect.selectedIndex];
+        const idEscola = selectedOption ? parseInt(selectedOption.getAttribute('data-id-escola'), 10) : null;
+
+        if (!idEscola) {
+            mostrarMensagem('mensagemTurmaModal', 'Não foi possível determinar a escola do curso selecionado', 'error');
+            return;
+        }
+
         const dados = {
             nome: nome,
             id_curso: parseInt(curso, 10) || null,
-            id_escola: 1,
+            id_escola: idEscola,
             periodo: periodo,
             sala: parseInt(sala, 10) || null,
             ano_letivo: anoLetivo ? parseInt(anoLetivo, 10) : null,
