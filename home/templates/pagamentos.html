@@ -200,31 +200,25 @@ async function carregarPagamentos() {
         document.getElementById('loadingPagamentos').classList.remove('active');
     }
 }
-
-function preencherTabelaPagamentos(pagsList) {
-    const tbody = document.getElementById('pagamentosBody');
-    tbody.innerHTML = '';
-
-    if (pagsList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">Nenhum pagamento encontrado</td></tr>';
-        return;
-    }
-
-    pagsList.forEach(pag => {
-        const tr = document.createElement('tr');
-        const data = new Date(pag.data_pagamento);
-        tr.innerHTML = `
-            <td>${pag.aluno_nome}</td>
-            <td>-</td>
-            <td>${pag.mes}/${pag.ano}</td>
-            <td>${pag.valor_propina.toFixed(2)} Kz</td>
-            <td>${pag.valor_pago.toFixed(2)} Kz</td>
-            <td>${data.toLocaleDateString('pt-PT')}</td>
-            <td>${pag.metodo_pagamento || '-'}</td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
+pagsList.forEach(pag => {
+    const tr = document.createElement('tr');
+    const data = new Date(pag.data_pagamento);
+    
+    // ✅ Converter para número com parseFloat
+    const valorPropina = parseFloat(pag.valor_propina) || 0;
+    const valorPago = parseFloat(pag.valor_pago) || 0;
+    
+    tr.innerHTML = `
+        <td>${pag.aluno_nome}</td>
+        <td>-</td>
+        <td>${pag.mes}/${pag.ano}</td>
+        <td>${valorPropina.toFixed(2)} Kz</td>
+        <td>${valorPago.toFixed(2)} Kz</td>
+        <td>${data.toLocaleDateString('pt-PT')}</td>
+        <td>${pag.metodo_pagamento || '-'}</td>
+    `;
+    tbody.appendChild(tr);
+});
 
 async function carregarAlunos() {
     try {
@@ -248,10 +242,10 @@ async function carregarEstatisticas() {
         const response = await axios.get(API_BASE + 'pagamentos/');
         const todosPagamentos = response.data.results || response.data;
         
-        // Calcular estatísticas
-        const pago = todosPagamentos.filter(p => p.valor_pago >= p.valor_propina).length;
-        const pendente = todosPagamentos.filter(p => p.valor_pago === 0).length;
-        const atrasado = todosPagamentos.filter(p => p.valor_pago > 0 && p.valor_pago < p.valor_propina).length;
+        const pago = todosPagamentos.filter(p => parseFloat(p.valor_pago) >= parseFloat(p.valor_propina)).length;
+        const pendente = todosPagamentos.filter(p => parseFloat(p.valor_pago) === 0).length;
+        const atrasado = todosPagamentos.filter(p => parseFloat(p.valor_pago) > 0 && parseFloat(p.valor_pago) < parseFloat(p.valor_propina)).length;
+        
         
         const statsContainer = document.getElementById('statsContainer');
         statsContainer.innerHTML = `
