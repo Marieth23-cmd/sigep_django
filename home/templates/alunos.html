@@ -4,7 +4,7 @@
 
         <div>
             <h2>Lista de Alunos</h2>
-            <p>8 alunos registados</p>
+            <p id="alunosCount">Carregando...</p>
         </div>
 
         <div class="alunos-acoes">
@@ -16,10 +16,11 @@
                     type="text"
                     id="pesquisaAluno"
                     placeholder="Procurar aluno..."
+                    onkeyup="filtrarAlunos()"
                 >
             </div>
 
-            <button class="btn-filtro">
+            <button class="btn-filtro" onclick="aplicarFiltros()">
                 <i class="fas fa-filter"></i>
                 Filtros
             </button>
@@ -36,6 +37,12 @@
 
     </div>
 
+    <div class="loading" id="loadingAlunos">
+        <i class="fas fa-spinner fa-spin"></i> Carregando alunos...
+    </div>
+
+    <div id="mensagemAlunos"></div>
+
     <div class="alunos-table-container">
 
         <table class="alunos-table">
@@ -49,53 +56,13 @@
                     <th>Curso</th>
                     <th>Bolsa</th>
                     <th>Estado</th>
-                    <th></th>
+                    <th>Ações</th>
                 </tr>
 
             </thead>
 
             <tbody id="alunosBody">
-
-                <tr>
-                    <td>#1</td>
-                    <td>Ana Domingos</td>
-                    <td>Informática A</td>
-                    <td>Informática</td>
-                    <td>—</td>
-                    <td>
-                        <span class="status-activo">
-                            Activo
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn-menu">
-                            <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>#2</td>
-                    <td>Carlos Bumba</td>
-                    <td>Gestão B</td>
-                    <td>Gestão</td>
-                    <td>
-                        <span class="badge-bolsa">
-                            25%
-                        </span>
-                    </td>
-                    <td>
-                        <span class="status-activo">
-                            Activo
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn-menu">
-                            <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                    </td>
-                </tr>
-
+                <!-- Preenchida via JavaScript -->
             </tbody>
 
         </table>
@@ -103,6 +70,262 @@
     </div>
 
 </div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalAluno" onclick="fecharModalAluno(event)">
+
+    <div class="modal-aluno" onclick="event.stopPropagation()">
+
+        <h3>Registar Novo Aluno</h3>
+        <div id="mensagemModal"></div>
+
+        <input
+            type="text"
+            id="nomealuno"
+            placeholder="Nome completo"
+        >
+
+        <input
+            type="number"
+            id="numeroAluno"
+            placeholder="Número do aluno"
+        >
+
+        <select id="turmaAluno">
+            <option value="">Selecionar turma</option>
+            <!-- Preenchida via JavaScript -->
+        </select>
+
+        <select id="bolsaAluno">
+            <option value="">Selecionar bolsa (opcional)</option>
+            <!-- Preenchida via JavaScript -->
+        </select>
+
+        <input
+            type="text"
+            id="telefoneEncarregado"
+            placeholder="Telefone do encarregado"
+        >
+
+        <input
+            type="date"
+            id="dataNascimento"
+            placeholder="Data de nascimento"
+        >
+
+        <select id="sexoAluno">
+            <option value="">Selecionar sexo</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Feminino">Feminino</option>
+        </select>
+
+        <div class="modal-footer">
+
+            <button
+                class="btn-cancelar"
+                onclick="fecharModalAluno()"
+            >
+                Cancelar
+            </button>
+
+            <button class="btn-guardar" onclick="salvarAluno()">
+                Registar
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+const API_BASE = '/api/';
+let alunosFiltrados = [];
+
+// Carregar alunos ao iniciar
+document.addEventListener('DOMContentLoaded', function() {
+    carregarAlunos();
+    carregarTurmas();
+    carregarBolsas();
+});
+
+// Função para carregar alunos
+async function carregarAlunos() {
+    document.getElementById('loadingAlunos').classList.add('active');
+    try {
+        const response = await axios.get(API_BASE + 'alunos/');
+        alunosFiltrados = response.data.results || response.data;
+        
+        document.getElementById('alunosCount').textContent = alunosFiltrados.length + ' alunos registados';
+        preencherTabelaAlunos(alunosFiltrados);
+    } catch (error) {
+        console.error('Erro ao carregar alunos:', error);
+        mostrarMensagem('mensagemAlunos', 'Erro ao carregar alunos', 'error');
+    } finally {
+        document.getElementById('loadingAlunos').classList.remove('active');
+    }
+}
+
+// Função para preencher tabela de alunos
+function preencherTabelaAlunos(alunos) {
+    const tbody = document.getElementById('alunosBody');
+    tbody.innerHTML = '';
+
+    if (alunos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">Nenhum aluno encontrado</td></tr>';
+        return;
+    }
+
+    alunos.forEach(aluno => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>#${aluno.numero_aluno}</td>
+            <td>${aluno.nome}</td>
+            <td>${aluno.turma_nome || '-'}</td>
+            <td>${aluno.escola_nome || '-'}</td>
+            <td>
+                ${aluno.bolsa_nome ? `<span class="badge-bolsa">${aluno.bolsa_nome}</span>` : '—'}
+            </td>
+            <td>
+                <span class="status-${aluno.estado.toLowerCase()}">
+                    ${aluno.estado}
+                </span>
+            </td>
+            <td>
+                <button class="btn-menu" onclick="editarAluno(${aluno.id_aluno})">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Função para filtrar alunos
+function filtrarAlunos() {
+    const termo = document.getElementById('pesquisaAluno').value.toLowerCase();
+    const filtrados = alunosFiltrados.filter(aluno => 
+        aluno.nome.toLowerCase().includes(termo) ||
+        aluno.numero_aluno.toString().includes(termo)
+    );
+    preencherTabelaAlunos(filtrados);
+}
+
+// Função para carregar turmas
+async function carregarTurmas() {
+    try {
+        const response = await axios.get(API_BASE + 'turmas/');
+        const turmas = response.data.results || response.data;
+        const select = document.getElementById('turmaAluno');
+        
+        turmas.forEach(turma => {
+            const option = document.createElement('option');
+            option.value = turma.id_turma;
+            option.textContent = turma.nome + ' - ' + turma.periodo;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Erro ao carregar turmas:', error);
+    }
+}
+
+// Função para carregar bolsas
+async function carregarBolsas() {
+    try {
+        const response = await axios.get(API_BASE + 'bolsas/');
+        const bolsas = response.data.results || response.data;
+        const select = document.getElementById('bolsaAluno');
+        
+        bolsas.forEach(bolsa => {
+            const option = document.createElement('option');
+            option.value = bolsa.id_bolsa;
+            option.textContent = bolsa.nome + ' (' + bolsa.percentual_desconto + '%)';
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Erro ao carregar bolsas:', error);
+    }
+}
+
+// Função para abrir modal
+function abrirModalAluno() {
+    document.getElementById('modalAluno').style.display = 'flex';
+}
+
+// Função para fechar modal
+function fecharModalAluno(event) {
+    if (event && event.target.id !== 'modalAluno') return;
+    document.getElementById('modalAluno').style.display = 'none';
+    limparFormulario();
+}
+
+// Função para limpar formulário
+function limparFormulario() {
+    document.getElementById('nomealuno').value = '';
+    document.getElementById('numeroAluno').value = '';
+    document.getElementById('turmaAluno').value = '';
+    document.getElementById('bolsaAluno').value = '';
+    document.getElementById('telefoneEncarregado').value = '';
+    document.getElementById('dataNascimento').value = '';
+    document.getElementById('sexoAluno').value = '';
+    document.getElementById('mensagemModal').innerHTML = '';
+}
+
+// Função para salvar aluno
+async function salvarAluno() {
+    const nomealuno = document.getElementById('nomealuno').value;
+    const numeroAluno = document.getElementById('numeroAluno').value;
+    const turmaAluno = document.getElementById('turmaAluno').value;
+    const bolsaAluno = document.getElementById('bolsaAluno').value || null;
+
+    if (!nomealuno || !numeroAluno || !turmaAluno) {
+        mostrarMensagem('mensagemModal', 'Preencha todos os campos obrigatórios', 'error');
+        return;
+    }
+
+    try {
+        const dados = {
+            nome: nomealuno,
+            numero_aluno: numeroAluno,
+            id_turma: turmaAluno,
+            id_bolsa: bolsaAluno,
+            telefone_encarregado: document.getElementById('telefoneEncarregado').value,
+            data_nascimento: document.getElementById('dataNascimento').value,
+            sexo: document.getElementById('sexoAluno').value,
+            estado: 'ACTIVO',
+            id_escola: 1, // Ajuste conforme necessário
+        };
+
+        const response = await axios.post(API_BASE + 'alunos/', dados);
+        mostrarMensagem('mensagemModal', 'Aluno registado com sucesso!', 'success');
+        
+        setTimeout(() => {
+            fecharModalAluno();
+            carregarAlunos();
+        }, 1500);
+    } catch (error) {
+        console.error('Erro ao salvar aluno:', error);
+        mostrarMensagem('mensagemModal', 'Erro ao registar aluno', 'error');
+    }
+}
+
+// Função para editar aluno
+function editarAluno(id) {
+    alert('Funcionalidade de edição em desenvolvimento');
+}
+
+// Função para aplicar filtros
+function aplicarFiltros() {
+    alert('Filtros em desenvolvimento');
+}
+
+// Função para mostrar mensagens
+function mostrarMensagem(elementId, mensagem, tipo) {
+    const elemento = document.getElementById(elementId);
+    elemento.className = tipo;
+    elemento.innerHTML = mensagem;
+}
+</script>
 
 
 <!-- MODAL -->

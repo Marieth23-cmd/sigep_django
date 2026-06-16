@@ -2,14 +2,23 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     {% load static %}
 
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
     <title>SIGEP</title>
+    
+    <style>
+        .loading { display: none; text-align: center; }
+        .loading.active { display: block; }
+        .error { color: #d32f2f; padding: 10px; background: #ffebee; border-radius: 4px; margin: 10px 0; }
+        .success { color: #388e3c; padding: 10px; background: #e8f5e9; border-radius: 4px; margin: 10px 0; }
+    </style>
 </head>
 <body>
 
@@ -27,8 +36,7 @@
 
             
              
-            <div id="alunos" class="tab-content">~
-                
+            <div id="alunos" class="tab-content">
                 {% include 'alunos.html' %}
             </div>
 
@@ -62,6 +70,7 @@
 
     </div>
 
+    <script src="{% static 'js/api.js' %}"></script>
     <script src="{% static 'js/dashboard.js' %}"></script>
 
 </body>

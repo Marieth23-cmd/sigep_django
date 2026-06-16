@@ -6,7 +6,7 @@
             <p>Registo mensal de propinas</p>
         </div>
 
-        <button class="btn-primary">
+        <button class="btn-primary" onclick="abrirModalPagamento()">
             <i class="fas fa-plus"></i>
             Registar Pagamento
         </button>
@@ -14,42 +14,11 @@
 
     <!-- Estatísticas -->
 
-    <div class="pagamentos-stats">
-
-        <div class="pagamento-stat-card">
-            <div class="pagamento-icon pago">
-                <i class="fas fa-check-circle"></i>
-            </div>
-
-            <div>
-                <p class="stat-label">Pagos este mês</p>
-                <h3>942</h3>
-            </div>
-        </div>
-
-        <div class="pagamento-stat-card">
-            <div class="pagamento-icon pendente">
-                <i class="fas fa-clock"></i>
-            </div>
-
-            <div>
-                <p class="stat-label">Pendentes</p>
-                <h3>240</h3>
-            </div>
-        </div>
-
-        <div class="pagamento-stat-card">
-            <div class="pagamento-icon atrasado">
-                <i class="fas fa-exclamation-circle"></i>
-            </div>
-
-            <div>
-                <p class="stat-label">Atrasados</p>
-                <h3>66</h3>
-            </div>
-        </div>
-
+    <div class="pagamentos-stats" id="statsContainer">
+        <p>Carregando estatísticas...</p>
     </div>
+
+    <div id="mensagemPagamentos"></div>
 
     <!-- Tabela -->
 
@@ -59,12 +28,35 @@
 
             <h3>Histórico de Pagamentos</h3>
 
-            <select>
-                <option>Junho 2026</option>
-                <option>Maio 2026</option>
-                <option>Abril 2026</option>
-            </select>
+            <div>
+                <select id="mesPagamento" onchange="carregarPagamentos()">
+                    <option value="">Selecionar mês</option>
+                    <option value="1">Janeiro</option>
+                    <option value="2">Fevereiro</option>
+                    <option value="3">Março</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Maio</option>
+                    <option value="6">Junho</option>
+                    <option value="7">Julho</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Setembro</option>
+                    <option value="10">Outubro</option>
+                    <option value="11">Novembro</option>
+                    <option value="12">Dezembro</option>
+                </select>
 
+                <select id="anoPagamento" onchange="carregarPagamentos()">
+                    <option value="">Selecionar ano</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026" selected>2026</option>
+                </select>
+            </div>
+
+        </div>
+
+        <div class="loading" id="loadingPagamentos">
+            <i class="fas fa-spinner fa-spin"></i> Carregando pagamentos...
         </div>
 
         <table class="pagamentos-table">
@@ -73,11 +65,295 @@
                 <tr>
                     <th>Aluno</th>
                     <th>Turma</th>
-                    <th>Mês</th>
-                    <th>Valor</th>
+                    <th>Mês/Ano</th>
+                    <th>Propina</th>
+                    <th>Pagou</th>
                     <th>Data</th>
-                    <th>Estado</th>
+                    <th>Método</th>
                 </tr>
+            </thead>
+
+            <tbody id="pagamentosBody">
+                <!-- Preenchida via JavaScript -->
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<!-- MODAL PAGAMENTO -->
+<div class="modal-overlay" id="modalPagamento" onclick="fecharModalPagamento(event)">
+
+    <div class="modal-aluno" onclick="event.stopPropagation()">
+
+        <h3>Registar Pagamento</h3>
+        <div id="mensagemPagamentoModal"></div>
+
+        <select id="alunoModalPagamento">
+            <option value="">Selecionar aluno</option>
+            <!-- Preenchida via JavaScript -->
+        </select>
+
+        <input
+            type="number"
+            id="mesPagamentoModal"
+            placeholder="Mês (1-12)"
+            min="1"
+            max="12"
+        >
+
+        <input
+            type="number"
+            id="anoPagamentoModal"
+            placeholder="Ano"
+        >
+
+        <input
+            type="number"
+            id="valorPropina"
+            placeholder="Valor da Propina"
+            step="0.01"
+        >
+
+        <input
+            type="number"
+            id="valorPago"
+            placeholder="Valor Pago"
+            step="0.01"
+        >
+
+        <input
+            type="date"
+            id="dataPagamento"
+            placeholder="Data do pagamento"
+        >
+
+        <select id="metodoPagamento">
+            <option value="">Selecionar método</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Transferência">Transferência</option>
+            <option value="Cheque">Cheque</option>
+            <option value="Cartão">Cartão</option>
+        </select>
+
+        <textarea
+            id="observacaoPagamento"
+            placeholder="Observações"
+            rows="3"
+        ></textarea>
+
+        <div class="modal-footer">
+
+            <button
+                class="btn-cancelar"
+                onclick="fecharModalPagamento()"
+            >
+                Cancelar
+            </button>
+
+            <button class="btn-guardar" onclick="salvarPagamento()">
+                Registar
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+const API_BASE = '/api/';
+let pagamentos = [];
+let alunos = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    const mesAtual = new Date().getMonth() + 1;
+    document.getElementById('mesPagamento').value = mesAtual;
+    carregarPagamentos();
+    carregarAlunos();
+    carregarEstatisticas();
+});
+
+async function carregarPagamentos() {
+    document.getElementById('loadingPagamentos').classList.add('active');
+    const mes = document.getElementById('mesPagamento').value;
+    const ano = document.getElementById('anoPagamento').value;
+    
+    if (!mes || !ano) {
+        document.getElementById('loadingPagamentos').classList.remove('active');
+        return;
+    }
+
+    try {
+        const response = await axios.get(API_BASE + 'pagamentos/por_mes_ano/?mes=' + mes + '&ano=' + ano);
+        pagamentos = response.data.results || response.data;
+        preencherTabelaPagamentos(pagamentos);
+    } catch (error) {
+        console.error('Erro ao carregar pagamentos:', error);
+        mostrarMensagem('mensagemPagamentos', 'Erro ao carregar pagamentos', 'error');
+    } finally {
+        document.getElementById('loadingPagamentos').classList.remove('active');
+    }
+}
+
+function preencherTabelaPagamentos(pagsList) {
+    const tbody = document.getElementById('pagamentosBody');
+    tbody.innerHTML = '';
+
+    if (pagsList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">Nenhum pagamento encontrado</td></tr>';
+        return;
+    }
+
+    pagsList.forEach(pag => {
+        const tr = document.createElement('tr');
+        const data = new Date(pag.data_pagamento);
+        tr.innerHTML = `
+            <td>${pag.aluno_nome}</td>
+            <td>-</td>
+            <td>${pag.mes}/${pag.ano}</td>
+            <td>${pag.valor_propina.toFixed(2)} Kz</td>
+            <td>${pag.valor_pago.toFixed(2)} Kz</td>
+            <td>${data.toLocaleDateString('pt-PT')}</td>
+            <td>${pag.metodo_pagamento || '-'}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+async function carregarAlunos() {
+    try {
+        const response = await axios.get(API_BASE + 'alunos/');
+        alunos = response.data.results || response.data;
+        const select = document.getElementById('alunoModalPagamento');
+        
+        alunos.forEach(aluno => {
+            const option = document.createElement('option');
+            option.value = aluno.id_aluno;
+            option.textContent = aluno.nome;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Erro ao carregar alunos:', error);
+    }
+}
+
+async function carregarEstatisticas() {
+    try {
+        const response = await axios.get(API_BASE + 'pagamentos/');
+        const todosPagamentos = response.data.results || response.data;
+        
+        // Calcular estatísticas
+        const pago = todosPagamentos.filter(p => p.valor_pago >= p.valor_propina).length;
+        const pendente = todosPagamentos.filter(p => p.valor_pago === 0).length;
+        const atrasado = todosPagamentos.filter(p => p.valor_pago > 0 && p.valor_pago < p.valor_propina).length;
+        
+        const statsContainer = document.getElementById('statsContainer');
+        statsContainer.innerHTML = `
+            <div class="pagamento-stat-card">
+                <div class="pagamento-icon pago">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <p class="stat-label">Pagos</p>
+                    <h3>${pago}</h3>
+                </div>
+            </div>
+
+            <div class="pagamento-stat-card">
+                <div class="pagamento-icon pendente">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <p class="stat-label">Pendentes</p>
+                    <h3>${pendente}</h3>
+                </div>
+            </div>
+
+            <div class="pagamento-stat-card">
+                <div class="pagamento-icon atrasado">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div>
+                    <p class="stat-label">Parciais/Atrasados</p>
+                    <h3>${atrasado}</h3>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Erro ao carregar estatísticas:', error);
+    }
+}
+
+function abrirModalPagamento() {
+    document.getElementById('modalPagamento').style.display = 'flex';
+}
+
+function fecharModalPagamento(event) {
+    if (event && event.target.id !== 'modalPagamento') return;
+    document.getElementById('modalPagamento').style.display = 'none';
+    limparFormularioPagamento();
+}
+
+function limparFormularioPagamento() {
+    document.getElementById('alunoModalPagamento').value = '';
+    document.getElementById('mesPagamentoModal').value = '';
+    document.getElementById('anoPagamentoModal').value = '';
+    document.getElementById('valorPropina').value = '';
+    document.getElementById('valorPago').value = '';
+    document.getElementById('dataPagamento').value = '';
+    document.getElementById('metodoPagamento').value = '';
+    document.getElementById('observacaoPagamento').value = '';
+    document.getElementById('mensagemPagamentoModal').innerHTML = '';
+}
+
+async function salvarPagamento() {
+    const alunoId = document.getElementById('alunoModalPagamento').value;
+    const mes = document.getElementById('mesPagamentoModal').value;
+    const ano = document.getElementById('anoPagamentoModal').value;
+    const valorPropina = document.getElementById('valorPropina').value;
+    const valorPago = document.getElementById('valorPago').value;
+    const dataPagamento = document.getElementById('dataPagamento').value;
+
+    if (!alunoId || !mes || !ano || !valorPropina || !valorPago || !dataPagamento) {
+        mostrarMensagem('mensagemPagamentoModal', 'Preencha todos os campos obrigatórios', 'error');
+        return;
+    }
+
+    try {
+        const dados = {
+            id_aluno: alunoId,
+            mes: mes,
+            ano: ano,
+            valor_propina: valorPropina,
+            valor_pago: valorPago,
+            data_pagamento: dataPagamento,
+            metodo_pagamento: document.getElementById('metodoPagamento').value,
+            observacao: document.getElementById('observacaoPagamento').value,
+        };
+
+        await axios.post(API_BASE + 'pagamentos/', dados);
+        mostrarMensagem('mensagemPagamentoModal', 'Pagamento registado com sucesso!', 'success');
+        
+        setTimeout(() => {
+            fecharModalPagamento();
+            carregarPagamentos();
+            carregarEstatisticas();
+        }, 1500);
+    } catch (error) {
+        console.error('Erro ao salvar pagamento:', error);
+        mostrarMensagem('mensagemPagamentoModal', 'Erro ao registar pagamento', 'error');
+    }
+}
+
+function mostrarMensagem(elementId, mensagem, tipo) {
+    const elemento = document.getElementById(elementId);
+    elemento.className = tipo;
+    elemento.innerHTML = mensagem;
+}
+</script>
             </thead>
 
             <tbody>

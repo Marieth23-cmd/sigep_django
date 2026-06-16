@@ -7,97 +7,208 @@
             <p>Gerir cursos e propinas base</p>
         </div>
 
-        <button class="btn-novo-curso">
+        <button class="btn-novo-curso" onclick="abrirModalCurso()">
             <i class="fas fa-plus"></i>
             Novo Curso
         </button>
 
     </div>
 
-    <div class="cursos-grid">
+    <div class="loading" id="loadingCursos">
+        <i class="fas fa-spinner fa-spin"></i> Carregando cursos...
+    </div>
 
-        <!-- Informática -->
+    <div id="mensagemCursos"></div>
 
-        <div class="curso-card">
+    <div class="cursos-grid" id="cursosGrid">
+        <!-- Preenchida via JavaScript -->
+    </div>
 
-            <div class="curso-header">
+</div>
 
-                <div class="curso-icon">
-                    <i class="fas fa-book-open"></i>
-                </div>
+<!-- MODAL CURSO -->
+<div class="modal-overlay" id="modalCurso" onclick="fecharModalCurso(event)">
 
-                <div>
-                    <h3>Informática</h3>
-                    <p>4 turmas</p>
-                </div>
+    <div class="modal-aluno" onclick="event.stopPropagation()">
 
-            </div>
+        <h3>Novo Curso</h3>
+        <div id="mensagemCursoModal"></div>
 
-            <div class="curso-info">
+        <input
+            type="text"
+            id="nomeCurso"
+            placeholder="Nome do curso"
+        >
 
-                <div class="curso-box">
+        <input
+            type="number"
+            id="propinaMensalCurso"
+            placeholder="Propina mensal (Kz)"
+            step="0.01"
+        >
 
-                    <span>
-                        <i class="fas fa-users"></i>
-                        Alunos
-                    </span>
+        <select id="escolaCurso">
+            <option value="">Selecionar escola</option>
+            <!-- Preenchida via JavaScript -->
+        </select>
 
-                    <strong>320</strong>
+        <div class="modal-footer">
 
-                </div>
+            <button
+                class="btn-cancelar"
+                onclick="fecharModalCurso()"
+            >
+                Cancelar
+            </button>
 
-                <div class="curso-box">
-
-                    <span>
-                        <i class="fas fa-wallet"></i>
-                        Propina
-                    </span>
-
-                    <strong>15 000 Kz</strong>
-
-                </div>
-
-            </div>
-
-            <button class="btn-detalhes">
-                Ver detalhes
+            <button class="btn-guardar" onclick="salvarCurso()">
+                Guardar
             </button>
 
         </div>
 
-        <!-- Contabilidade -->
+    </div>
 
-        <div class="curso-card">
+</div>
 
+<script>
+const API_BASE = '/api/';
+let cursos = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    carregarCursos();
+    carregarEscolas();
+});
+
+async function carregarCursos() {
+    document.getElementById('loadingCursos').classList.add('active');
+    try {
+        const response = await axios.get(API_BASE + 'cursos/');
+        cursos = response.data.results || response.data;
+        preencherCursosGrid(cursos);
+    } catch (error) {
+        console.error('Erro ao carregar cursos:', error);
+        mostrarMensagem('mensagemCursos', 'Erro ao carregar cursos', 'error');
+    } finally {
+        document.getElementById('loadingCursos').classList.remove('active');
+    }
+}
+
+function preencherCursosGrid(cursosList) {
+    const grid = document.getElementById('cursosGrid');
+    grid.innerHTML = '';
+
+    if (cursosList.length === 0) {
+        grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 40px;">Nenhum curso encontrado</p>';
+        return;
+    }
+
+    cursosList.forEach(curso => {
+        const card = document.createElement('div');
+        card.className = 'curso-card';
+        card.innerHTML = `
             <div class="curso-header">
-
                 <div class="curso-icon">
                     <i class="fas fa-book-open"></i>
                 </div>
-
                 <div>
-                    <h3>Contabilidade</h3>
-                    <p>3 turmas</p>
+                    <h3>${curso.nome}</h3>
+                    <p>Propina: ${curso.propina_mensal} Kz</p>
                 </div>
-
             </div>
 
             <div class="curso-info">
-
-                <div class="curso-box">
-                    <span>
-                        <i class="fas fa-users"></i>
-                        Alunos
-                    </span>
-                    <strong>280</strong>
-                </div>
-
                 <div class="curso-box">
                     <span>
                         <i class="fas fa-wallet"></i>
-                        Propina
+                        Propina Mensal
                     </span>
-                    <strong>16 500 Kz</strong>
+                    <strong>${curso.propina_mensal.toFixed(2)} Kz</strong>
+                </div>
+            </div>
+
+            <button class="btn-detalhes" onclick="editarCurso(${curso.id_curso})">
+                Ver detalhes
+            </button>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+async function carregarEscolas() {
+    try {
+        const response = await axios.get(API_BASE + 'escolas/');
+        const escolas = response.data.results || response.data;
+        const select = document.getElementById('escolaCurso');
+        
+        escolas.forEach(escola => {
+            const option = document.createElement('option');
+            option.value = escola.id_escola;
+            option.textContent = escola.nome;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Erro ao carregar escolas:', error);
+    }
+}
+
+function abrirModalCurso() {
+    document.getElementById('modalCurso').style.display = 'flex';
+}
+
+function fecharModalCurso(event) {
+    if (event && event.target.id !== 'modalCurso') return;
+    document.getElementById('modalCurso').style.display = 'none';
+    limparFormularioCurso();
+}
+
+function limparFormularioCurso() {
+    document.getElementById('nomeCurso').value = '';
+    document.getElementById('propinaMensalCurso').value = '';
+    document.getElementById('escolaCurso').value = '';
+    document.getElementById('mensagemCursoModal').innerHTML = '';
+}
+
+async function salvarCurso() {
+    const nomeCurso = document.getElementById('nomeCurso').value;
+    const propinaMensalCurso = document.getElementById('propinaMensalCurso').value;
+    const escolaCurso = document.getElementById('escolaCurso').value;
+
+    if (!nomeCurso || !propinaMensalCurso || !escolaCurso) {
+        mostrarMensagem('mensagemCursoModal', 'Preencha todos os campos', 'error');
+        return;
+    }
+
+    try {
+        const dados = {
+            nome: nomeCurso,
+            propina_mensal: propinaMensalCurso,
+            id_escola: escolaCurso,
+        };
+
+        await axios.post(API_BASE + 'cursos/', dados);
+        mostrarMensagem('mensagemCursoModal', 'Curso registado com sucesso!', 'success');
+        
+        setTimeout(() => {
+            fecharModalCurso();
+            carregarCursos();
+        }, 1500);
+    } catch (error) {
+        console.error('Erro ao salvar curso:', error);
+        mostrarMensagem('mensagemCursoModal', 'Erro ao registar curso', 'error');
+    }
+}
+
+function editarCurso(id) {
+    alert('Funcionalidade em desenvolvimento');
+}
+
+function mostrarMensagem(elementId, mensagem, tipo) {
+    const elemento = document.getElementById(elementId);
+    elemento.className = tipo;
+    elemento.innerHTML = mensagem;
+}
+</script>
                 </div>
 
             </div>
