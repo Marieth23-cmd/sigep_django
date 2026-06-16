@@ -106,6 +106,7 @@ function preencherCursosGrid(cursosList) {
     cursosList.forEach(curso => {
         const card = document.createElement('div');
         card.className = 'curso-card';
+        const propina = Number(curso.propina_mensal) || 0;
         card.innerHTML = `
             <div class="curso-header">
                 <div class="curso-icon">
@@ -113,7 +114,7 @@ function preencherCursosGrid(cursosList) {
                 </div>
                 <div>
                     <h3>${curso.nome}</h3>
-                    <p>Propina: ${curso.propina_mensal} Kz</p>
+                    <p>Propina: ${propina.toFixed(2)} Kz</p>
                 </div>
             </div>
 
@@ -123,7 +124,7 @@ function preencherCursosGrid(cursosList) {
                         <i class="fas fa-wallet"></i>
                         Propina Mensal
                     </span>
-                    <strong>${curso.propina_mensal.toFixed(2)} Kz</strong>
+                    <strong>${propina.toFixed(2)} Kz</strong>
                 </div>
             </div>
 
@@ -209,145 +210,3 @@ function mostrarMensagem(elementId, mensagem, tipo) {
     elemento.innerHTML = mensagem;
 }
 </script>
-                </div>
-
-            </div>
-
-            <button class="btn-detalhes">
-                Ver detalhes
-            </button>
-
-        </div>
-
-        <!-- Ciências -->
-
-        <div class="curso-card">
-
-            <div class="curso-header">
-
-                <div class="curso-icon">
-                    <i class="fas fa-book-open"></i>
-                </div>
-
-                <div>
-                    <h3>Ciências</h3>
-                    <p>3 turmas</p>
-                </div>
-
-            </div>
-
-            <div class="curso-info">
-
-                <div class="curso-box">
-                    <span>
-                        <i class="fas fa-users"></i>
-                        Alunos
-                    </span>
-                    <strong>210</strong>
-                </div>
-
-                <div class="curso-box">
-                    <span>
-                        <i class="fas fa-wallet"></i>
-                        Propina
-                    </span>
-                    <strong>14 000 Kz</strong>
-                </div>
-
-            </div>
-
-            <button class="btn-detalhes">
-                Ver detalhes
-            </button>
-
-        </div>
-
-        <!-- Gestão -->
-
-        <div class="curso-card">
-
-            <div class="curso-header">
-
-                <div class="curso-icon">
-                    <i class="fas fa-book-open"></i>
-                </div>
-
-                <div>
-                    <h3>Gestão</h3>
-                    <p>3 turmas</p>
-                </div>
-
-            </div>
-
-            <div class="curso-info">
-
-                <div class="curso-box">
-                    <span>
-                        <i class="fas fa-users"></i>
-                        Alunos
-                    </span>
-                    <strong>245</strong>
-                </div>
-
-                <div class="curso-box">
-                    <span>
-                        <i class="fas fa-wallet"></i>
-                        Propina
-                    </span>
-                    <strong>18 000 Kz</strong>
-                </div>
-
-            </div>
-
-            <button class="btn-detalhes">
-                Ver detalhes
-            </button>
-
-        </div>
-
-        <!-- Direito -->
-
-        <div class="curso-card">
-
-            <div class="curso-header">
-
-                <div class="curso-icon">
-                    <i class="fas fa-book-open"></i>
-                </div>
-
-                <div>
-                    <h3>Direito</h3>
-                    <p>2 turmas</p>
-                </div>
-
-            </div>
-
-            <div class="curso-info">
-
-                <div class="curso-box">
-                    <span>
-                        <i class="fas fa-users"></i>
-                        Alunos
-                    </span>
-                    <strong>193</strong>
-                </div>
-
-                <div class="curso-box">
-                    <span>
-                        <i class="fas fa-wallet"></i>
-                        Propina
-                    </span>
-                    <strong>20 000 Kz</strong>
-                </div>
-
-            </div>
-
-            <button class="btn-detalhes">
-                Ver detalhes
-            </button>
-
-        </div>
-
-    </div>
-
-</div>
