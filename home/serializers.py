@@ -59,16 +59,15 @@ class BolsaSerializer(serializers.ModelSerializer):
         model = Bolsa
         fields = '__all__'
 
-
 class AlunoSerializer(serializers.ModelSerializer):
     escola_nome = serializers.CharField(source='id_escola.nome', read_only=True)
     turma_nome = serializers.CharField(source='id_turma.nome', read_only=True)
+    curso_nome = serializers.CharField(source='id_turma.id_curso.nome', read_only=True)  # ✅ novo
     bolsa_nome = serializers.CharField(source='id_bolsa.nome', read_only=True, allow_null=True)
 
     class Meta:
         model = Aluno
         fields = '__all__'
-
 
 class PagamentoSerializer(serializers.ModelSerializer):
     aluno_nome = serializers.CharField(source='id_aluno.nome', read_only=True)
