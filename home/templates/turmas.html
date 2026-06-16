@@ -168,14 +168,14 @@ async function salvarTurma() {
     try {
         const dados = {
             nome: nome,
-            id_curso: curso,
+            id_curso: parseInt(curso, 10) || null,
             id_escola: 1,
             periodo: periodo,
-            sala: sala,
-            ano_letivo: anoLetivo || null,
+            sala: parseInt(sala, 10) || null,
+            ano_letivo: anoLetivo ? parseInt(anoLetivo, 10) : null,
         };
 
-        await axios.post(API_BASE + 'turmas/', dados);
+        const response = await axios.post(API_BASE + 'turmas/', dados);
         mostrarMensagem('mensagemTurmaModal', 'Turma registada com sucesso!', 'success');
 
         setTimeout(() => {
@@ -184,7 +184,11 @@ async function salvarTurma() {
         }, 1500);
     } catch (error) {
         console.error('Erro ao salvar turma:', error);
-        mostrarMensagem('mensagemTurmaModal', 'Erro ao registar turma', 'error');
+        let mensagem = 'Erro ao registar turma';
+        if (error.response && error.response.data) {
+            try { mensagem = JSON.stringify(error.response.data); } catch (e) { mensagem = String(error.response.data); }
+        }
+        mostrarMensagem('mensagemTurmaModal', mensagem, 'error');
     }
 }
 

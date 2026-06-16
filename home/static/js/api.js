@@ -2,7 +2,15 @@
  * Utilitários para comunicação com a API SIGEP
  */
 
-const API_BASE_URL = '/api/';
+// Use global API_BASE se definido no template (base.html), caso contrário fallback
+const API_BASE_URL = (window && window.API_BASE) ? window.API_BASE : '/api/';
+
+// Configurar axios para CSRF e requisições AJAX globalmente
+if (typeof axios !== 'undefined') {
+    axios.defaults.xsrfCookieName = 'csrftoken';
+    axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+    axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+}
 
 /**
  * Classe para gerenciar requisições à API

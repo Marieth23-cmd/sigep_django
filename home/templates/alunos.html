@@ -286,26 +286,30 @@ async function salvarAluno() {
     try {
         const dados = {
             nome: nomealuno,
-            numero_aluno: numeroAluno,
-            id_turma: turmaAluno,
-            id_bolsa: bolsaAluno,
-            telefone_encarregado: document.getElementById('telefoneEncarregado').value,
-            data_nascimento: document.getElementById('dataNascimento').value,
-            sexo: document.getElementById('sexoAluno').value,
+            numero_aluno: parseInt(numeroAluno, 10),
+            id_turma: parseInt(turmaAluno, 10),
+            id_bolsa: bolsaAluno ? parseInt(bolsaAluno, 10) : null,
+            telefone_encarregado: document.getElementById('telefoneEncarregado').value || null,
+            data_nascimento: document.getElementById('dataNascimento').value || null,
+            sexo: document.getElementById('sexoAluno').value || null,
             estado: 'ACTIVO',
             id_escola: 1, // Ajuste conforme necessário
         };
 
         const response = await axios.post(API_BASE + 'alunos/', dados);
         mostrarMensagem('mensagemModal', 'Aluno registado com sucesso!', 'success');
-        
+
         setTimeout(() => {
             fecharModalAluno();
             carregarAlunos();
         }, 1500);
     } catch (error) {
         console.error('Erro ao salvar aluno:', error);
-        mostrarMensagem('mensagemModal', 'Erro ao registar aluno', 'error');
+        let mensagem = 'Erro ao registar aluno';
+        if (error.response && error.response.data) {
+            try { mensagem = JSON.stringify(error.response.data); } catch (e) { mensagem = String(error.response.data); }
+        }
+        mostrarMensagem('mensagemModal', mensagem, 'error');
     }
 }
 

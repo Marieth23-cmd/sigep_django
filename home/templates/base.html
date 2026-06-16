@@ -11,6 +11,12 @@
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
+    <script>
+        // base API global disponível para templates
+        window.API_BASE = window.API_BASE || '/api/';
+        var API_BASE = window.API_BASE; // expõe variável global legada para templates existentes
+    </script>
+
     <title>SIGEP</title>
     
     <style>
@@ -133,9 +139,7 @@
         </div>
 
     </div>
-    <script>
-        const API_BASE = '/api/';
-        </script>
+    
     <script src="{% static 'js/api.js' %}"></script>
     <script src="{% static 'js/dashboard.js' %}"></script>
 

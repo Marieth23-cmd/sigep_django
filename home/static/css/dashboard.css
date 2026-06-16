@@ -1853,6 +1853,7 @@ select:disabled {
 .btn-cancelar {
   background: #e5e7eb;
   color: #333;
+  cursor: pointer;
 }
 
 .btn-cancelar:hover {
@@ -1862,6 +1863,7 @@ select:disabled {
 .btn-salvar {
   background: var(--sigep-teal);
   color: white;
+  cursor: pointer;
 }
 
 .btn-salvar:hover {
