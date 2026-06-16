@@ -79,8 +79,6 @@ class Curso(models.Model):
 
     def __str__(self):
         return self.nome
-
-
 class Turma(models.Model):
     PERIODO_CHOICES = [
         ('MANHA', 'Manhã'),
@@ -92,16 +90,14 @@ class Turma(models.Model):
     id_escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
     id_curso = models.ForeignKey(Curso, on_delete=models.CASCADE)
     nome = models.CharField(max_length=20)
-    periodo = models.CharField(
-        max_length=20,
-        choices=PERIODO_CHOICES
-    )
-    ano_letivo = models.IntegerField(null=True, blank=True)
-    sala = models.IntegerField()
+    periodo = models.CharField(max_length=20, choices=PERIODO_CHOICES)
+    sala = models.IntegerField(null=True, blank=True)        
+    ano_letivo = models.IntegerField(null=True, blank=True)  
 
     class Meta:
         db_table = 'turmas'
         verbose_name_plural = 'Turmas'
+        unique_together = [['nome', 'id_curso', 'periodo']]  # ✅ impede duplicatas
 
     def __str__(self):
         return f"{self.nome} - {self.periodo}"

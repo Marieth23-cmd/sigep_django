@@ -34,6 +34,8 @@ class CursoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+from rest_framework.validators import UniqueTogetherValidator
+
 class TurmaSerializer(serializers.ModelSerializer):
     escola_nome = serializers.CharField(source='id_escola.nome', read_only=True)
     curso_nome = serializers.CharField(source='id_curso.nome', read_only=True)
@@ -41,6 +43,13 @@ class TurmaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Turma
         fields = '__all__'
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Turma.objects.all(),
+                fields=['id_curso', 'nome'],
+                message='Já existe uma turma com esse nome para este curso.'
+            )
+        ]
 
 
 class BolsaSerializer(serializers.ModelSerializer):

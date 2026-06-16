@@ -107,12 +107,6 @@
             placeholder="Telefone do encarregado"
         >
 
-        <input
-            type="date"
-            id="dataNascimento"
-            placeholder="Data de nascimento"
-        >
-
         <select id="sexoAluno">
             <option value="">Selecionar sexo</option>
             <option value="Masculino">Masculino</option>
@@ -217,11 +211,15 @@ async function carregarTurmas() {
         const response = await axios.get(API_BASE + 'turmas/');
         const turmas = response.data.results || response.data;
         const select = document.getElementById('turmaAluno');
+        select.innerHTML = '<option value="">Selecionar turma</option>';
         
         turmas.forEach(turma => {
             const option = document.createElement('option');
             option.value = turma.id_turma;
             option.textContent = turma.nome + ' - ' + turma.periodo;
+            if (turma.id_escola) {
+                option.setAttribute('data-id-escola', turma.id_escola);
+            }
             select.appendChild(option);
         });
     } catch (error) {
@@ -235,6 +233,7 @@ async function carregarBolsas() {
         const response = await axios.get(API_BASE + 'bolsas/');
         const bolsas = response.data.results || response.data;
         const select = document.getElementById('bolsaAluno');
+        select.innerHTML = '<option value="">Selecionar bolsa (opcional)</option>';
         
         bolsas.forEach(bolsa => {
             const option = document.createElement('option');
@@ -276,7 +275,6 @@ async function salvarAluno() {
     const nomealuno = document.getElementById('nomealuno').value;
     const numeroAluno = document.getElementById('numeroAluno').value;
     const turmaAluno = document.getElementById('turmaAluno').value;
-    const bolsaAluno = document.getElementById('bolsaAluno').value || null;
 
     if (!nomealuno || !numeroAluno || !turmaAluno) {
         mostrarMensagem('mensagemModal', 'Preencha todos os campos obrigatórios', 'error');
@@ -284,30 +282,41 @@ async function salvarAluno() {
     }
 
     try {
+        const turmaSelect = document.getElementById('turmaAluno');
+        const selectedTurmaOption = turmaSelect.options[turmaSelect.selectedIndex];
+        const idEscola = selectedTurmaOption
+            ? parseInt(selectedTurmaOption.getAttribute('data-id-escola'), 10)
+            : null;
+
+        if (!idEscola) {
+            mostrarMensagem('mensagemModal', 'Não foi possível determinar a escola da turma', 'error');
+            return;
+        }
+
         const dados = {
             nome: nomealuno,
             numero_aluno: parseInt(numeroAluno, 10),
             id_turma: parseInt(turmaAluno, 10),
-            id_bolsa: bolsaAluno ? parseInt(bolsaAluno, 10) : null,
+            id_bolsa: null, // sem bolsa por agora
             telefone_encarregado: document.getElementById('telefoneEncarregado').value || null,
-            data_nascimento: document.getElementById('dataNascimento').value || null,
             sexo: document.getElementById('sexoAluno').value || null,
             estado: 'ACTIVO',
-            id_escola: 1, // Ajuste conforme necessário
+            id_escola: idEscola,
         };
 
-        const response = await axios.post(API_BASE + 'alunos/', dados);
+        await axios.post(API_BASE + 'alunos/', dados);
         mostrarMensagem('mensagemModal', 'Aluno registado com sucesso!', 'success');
 
         setTimeout(() => {
             fecharModalAluno();
             carregarAlunos();
         }, 1500);
+
     } catch (error) {
-        console.error('Erro ao salvar aluno:', error);
         let mensagem = 'Erro ao registar aluno';
-        if (error.response && error.response.data) {
-            try { mensagem = JSON.stringify(error.response.data); } catch (e) { mensagem = String(error.response.data); }
+        if (error.response?.data) {
+            try { mensagem = JSON.stringify(error.response.data); }
+            catch (e) { mensagem = String(error.response.data); }
         }
         mostrarMensagem('mensagemModal', mensagem, 'error');
     }
@@ -374,7 +383,7 @@ function mostrarMensagem(elementId, mensagem, tipo) {
                 Cancelar
             </button>
 
-            <button class="btn-guardar">
+            <button class="btn-guardar" onclick="salvarAluno()">
                 Registar
             </button>
 

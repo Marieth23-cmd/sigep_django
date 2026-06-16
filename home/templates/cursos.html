@@ -46,10 +46,7 @@
             placeholder="Propina mensal (Kz)"
             step="0.01"
         >
-        <select id="escolaCurso">
-            <option value="">Selecionar escola</option>
-            <!-- Preenchida via JavaScript -->
-        </select>
+        
         <div class="modal-footer">
 
             <button
@@ -182,7 +179,7 @@ async function salvarCurso() {
         const dados = {
             nome: nomeCurso,
             propina_mensal: parseFloat(propinaMensalCurso) || 0,
-            id_escola: parseInt(document.getElementById('escolaCurso').value, 10) || null,
+            id_escola: 1
         };
 
         const response = await axios.post(API_BASE + 'cursos/', dados);

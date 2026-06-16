@@ -1870,6 +1870,17 @@ select:disabled {
   background: #0d8a96;
 }
 
+.btn-guardar {
+  background: var(--sigep-teal);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
 /* SELECT FIELD */
 .form-select {
   width: 100%;
