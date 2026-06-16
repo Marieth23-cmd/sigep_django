@@ -108,14 +108,14 @@
 <script>
 
 let alunosFiltrados = [];
-
-// ✅ APENAS UM DOMContentLoaded
-document.addEventListener('DOMContentLoaded', function() {
+function iniciarPaginaAlunos() {
     carregarAlunos();
     carregarTurmasSelect();
     carregarBolsas();
-});
+}
 
+
+iniciarPaginaAlunos();
 async function carregarAlunos() {
     document.getElementById('loadingAlunos').classList.add('active');
     try {
