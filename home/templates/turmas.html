@@ -5,121 +5,192 @@
             <h2>Turmas</h2>
             <p>Gerir turmas activas e respectivos alunos</p>
         </div>
-
-        <button class="btn-primary">
+        <button class="btn-primary" onclick="abrirModalTurma()">
             <i class="fas fa-plus"></i>
             Nova Turma
         </button>
     </div>
 
+    <div class="loading" id="loadingTurmas">
+        <i class="fas fa-spinner fa-spin"></i> Carregando turmas...
+    </div>
+
+    <div id="mensagemTurmas"></div>
+
     <div class="table-card">
         <table class="turmas-table">
-
             <thead>
                 <tr>
                     <th>Turma</th>
                     <th>Curso</th>
-                    <th>Alunos</th>
+                    <th>Período</th>
                     <th>Sala</th>
                     <th></th>
                 </tr>
             </thead>
-
-            <tbody>
-
-                <tr>
-                    <td><strong>Informática A</strong></td>
-                    <td>Informática</td>
-                    <td>
-                        <span class="badge-alunos">
-                            <i class="fas fa-users"></i>
-                            35
-                        </span>
-                    </td>
-                    <td>Sala 12</td>
-                    <td class="text-right">
-                        <button class="btn-link">Gerir</button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td><strong>Informática B</strong></td>
-                    <td>Informática</td>
-                    <td>
-                        <span class="badge-alunos">
-                            <i class="fas fa-users"></i>
-                            32
-                        </span>
-                    </td>
-                    <td>Sala 14</td>
-                    <td class="text-right">
-                        <button class="btn-link">Gerir</button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td><strong>Informática C</strong></td>
-                    <td>Informática</td>
-                    <td>
-                        <span class="badge-alunos">
-                            <i class="fas fa-users"></i>
-                            28
-                        </span>
-                    </td>
-                    <td>Sala 15</td>
-                    <td class="text-right">
-                        <button class="btn-link">Gerir</button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td><strong>Contabilidade A</strong></td>
-                    <td>Contabilidade</td>
-                    <td>
-                        <span class="badge-alunos">
-                            <i class="fas fa-users"></i>
-                            30
-                        </span>
-                    </td>
-                    <td>Sala 21</td>
-                    <td class="text-right">
-                        <button class="btn-link">Gerir</button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td><strong>Gestão A</strong></td>
-                    <td>Gestão</td>
-                    <td>
-                        <span class="badge-alunos">
-                            <i class="fas fa-users"></i>
-                            33
-                        </span>
-                    </td>
-                    <td>Sala 31</td>
-                    <td class="text-right">
-                        <button class="btn-link">Gerir</button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td><strong>Direito A</strong></td>
-                    <td>Direito</td>
-                    <td>
-                        <span class="badge-alunos">
-                            <i class="fas fa-users"></i>
-                            27
-                        </span>
-                    </td>
-                    <td>Sala 41</td>
-                    <td class="text-right">
-                        <button class="btn-link">Gerir</button>
-                    </td>
-                </tr>
-
+            <tbody id="turmasBody">
             </tbody>
-
         </table>
     </div>
 
 </div>
+
+<!-- MODAL TURMA -->
+<div class="modal-overlay" id="modalTurma" onclick="fecharModalTurma(event)">
+    <div class="modal-aluno" onclick="event.stopPropagation()">
+        <h3>Nova Turma</h3>
+        <div id="mensagemTurmaModal"></div>
+
+        <input type="text" id="nomeTurma" placeholder="Nome da turma (ex: 10A)">
+
+        <select id="cursoTurma">
+            <option value="">Selecionar curso</option>
+        </select>
+
+        <select id="periodoTurma">
+            <option value="">Selecionar período</option>
+            <option value="MANHA">Manhã</option>
+            <option value="TARDE">Tarde</option>
+            <option value="NOITE">Noite</option>
+        </select>
+
+        <input type="number" id="salaTurma" placeholder="Número da sala">
+
+        <input type="number" id="anoLetivoTurma" placeholder="Ano lectivo (ex: 2025)">
+
+        <div class="modal-footer">
+            <button class="btn-cancelar" onclick="fecharModalTurma()">Cancelar</button>
+            <button class="btn-guardar" onclick="salvarTurma()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let turmas = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    carregarTurmas();
+});
+
+async function carregarTurmas() {
+    document.getElementById('loadingTurmas').classList.add('active');
+    try {
+        const response = await axios.get(API_BASE + 'turmas/');
+        turmas = response.data.results || response.data;
+        preencherTurmas(turmas);
+    } catch (error) {
+        console.error('Erro ao carregar turmas:', error);
+        mostrarMensagem('mensagemTurmas', 'Erro ao carregar turmas', 'error');
+    } finally {
+        document.getElementById('loadingTurmas').classList.remove('active');
+    }
+}
+
+function preencherTurmas(lista) {
+    const tbody = document.getElementById('turmasBody');
+    tbody.innerHTML = '';
+
+    if (lista.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">Nenhuma turma encontrada</td></tr>';
+        return;
+    }
+
+    lista.forEach(turma => {
+        const periodo = {
+            'MANHA': 'Manhã',
+            'TARDE': 'Tarde',
+            'NOITE': 'Noite'
+        }[turma.periodo] || turma.periodo;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${turma.nome}</strong></td>
+            <td>${turma.curso_nome || '—'}</td>
+            <td>${periodo}</td>
+            <td>Sala ${turma.sala}</td>
+            <td class="text-right">
+                <button class="btn-link">Gerir</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function abrirModalTurma() {
+    carregarCursosSelect();
+    document.getElementById('modalTurma').style.display = 'flex';
+}
+
+function fecharModalTurma(event) {
+    if (event && event.target.id !== 'modalTurma') return;
+    document.getElementById('modalTurma').style.display = 'none';
+    limparFormularioTurma();
+}
+
+function limparFormularioTurma() {
+    document.getElementById('nomeTurma').value = '';
+    document.getElementById('cursoTurma').value = '';
+    document.getElementById('periodoTurma').value = '';
+    document.getElementById('salaTurma').value = '';
+    document.getElementById('anoLetivoTurma').value = '';
+    document.getElementById('mensagemTurmaModal').innerHTML = '';
+}
+
+async function carregarCursosSelect() {
+    try {
+        const response = await axios.get(API_BASE + 'cursos/');
+        const cursos = response.data.results || response.data;
+        const select = document.getElementById('cursoTurma');
+        select.innerHTML = '<option value="">Selecionar curso</option>';
+        cursos.forEach(curso => {
+            const option = document.createElement('option');
+            option.value = curso.id_curso;
+            option.textContent = curso.nome;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Erro ao carregar cursos:', error);
+    }
+}
+
+async function salvarTurma() {
+    const nome = document.getElementById('nomeTurma').value;
+    const curso = document.getElementById('cursoTurma').value;
+    const periodo = document.getElementById('periodoTurma').value;
+    const sala = document.getElementById('salaTurma').value;
+    const anoLetivo = document.getElementById('anoLetivoTurma').value;
+
+    if (!nome || !curso || !periodo || !sala) {
+        mostrarMensagem('mensagemTurmaModal', 'Preencha todos os campos obrigatórios', 'error');
+        return;
+    }
+
+    try {
+        const dados = {
+            nome: nome,
+            id_curso: curso,
+            id_escola: 1,
+            periodo: periodo,
+            sala: sala,
+            ano_letivo: anoLetivo || null,
+        };
+
+        await axios.post(API_BASE + 'turmas/', dados);
+        mostrarMensagem('mensagemTurmaModal', 'Turma registada com sucesso!', 'success');
+
+        setTimeout(() => {
+            fecharModalTurma();
+            carregarTurmas();
+        }, 1500);
+    } catch (error) {
+        console.error('Erro ao salvar turma:', error);
+        mostrarMensagem('mensagemTurmaModal', 'Erro ao registar turma', 'error');
+    }
+}
+
+function mostrarMensagem(elementId, mensagem, tipo) {
+    const elemento = document.getElementById(elementId);
+    elemento.className = tipo;
+    elemento.innerHTML = mensagem;
+}
+</script>

@@ -73,7 +73,6 @@ let cursos = [];
 
 document.addEventListener('DOMContentLoaded', function() {
     carregarCursos();
-    carregarEscolas();
 });
 
 async function carregarCursos() {
@@ -113,40 +112,18 @@ function preencherCursosGrid(cursosList) {
                     <p>Propina: ${propina.toFixed(2)} Kz</p>
                 </div>
             </div>
-
             <div class="curso-info">
                 <div class="curso-box">
-                    <span>
-                        <i class="fas fa-wallet"></i>
-                        Propina Mensal
-                    </span>
+                    <span><i class="fas fa-wallet"></i> Propina Mensal</span>
                     <strong>${propina.toFixed(2)} Kz</strong>
                 </div>
             </div>
-
             <button class="btn-detalhes" onclick="editarCurso(${curso.id_curso})">
                 Ver detalhes
             </button>
         `;
         grid.appendChild(card);
     });
-}
-
-async function carregarEscolas() {
-    try {
-        const response = await axios.get(API_BASE + 'escolas/');
-        const escolas = response.data.results || response.data;
-        const select = document.getElementById('escolaCurso');
-        
-        escolas.forEach(escola => {
-            const option = document.createElement('option');
-            option.value = escola.id_escola;
-            option.textContent = escola.nome;
-            select.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Erro ao carregar escolas:', error);
-    }
 }
 
 function abrirModalCurso() {
@@ -162,16 +139,14 @@ function fecharModalCurso(event) {
 function limparFormularioCurso() {
     document.getElementById('nomeCurso').value = '';
     document.getElementById('propinaMensalCurso').value = '';
-    document.getElementById('escolaCurso').value = '';
     document.getElementById('mensagemCursoModal').innerHTML = '';
 }
 
 async function salvarCurso() {
     const nomeCurso = document.getElementById('nomeCurso').value;
     const propinaMensalCurso = document.getElementById('propinaMensalCurso').value;
-    const escolaCurso = document.getElementById('escolaCurso').value;
 
-    if (!nomeCurso || !propinaMensalCurso || !escolaCurso) {
+    if (!nomeCurso || !propinaMensalCurso) {
         mostrarMensagem('mensagemCursoModal', 'Preencha todos os campos', 'error');
         return;
     }
