@@ -1,0 +1,158 @@
+<div class="alunos-page">
+
+    <div class="alunos-topo">
+
+        <div>
+            <h2>Lista de Alunos</h2>
+            <p>8 alunos registados</p>
+        </div>
+
+        <div class="alunos-acoes">
+
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+
+                <input
+                    type="text"
+                    id="pesquisaAluno"
+                    placeholder="Procurar aluno..."
+                >
+            </div>
+
+            <button class="btn-filtro">
+                <i class="fas fa-filter"></i>
+                Filtros
+            </button>
+
+            <button
+                class="btn-novo"
+                onclick="abrirModalAluno()"
+            >
+                <i class="fas fa-plus"></i>
+                Novo Aluno
+            </button>
+
+        </div>
+
+    </div>
+
+    <div class="alunos-table-container">
+
+        <table class="alunos-table">
+
+            <thead>
+
+                <tr>
+                    <th>Nº</th>
+                    <th>Nome</th>
+                    <th>Turma</th>
+                    <th>Curso</th>
+                    <th>Bolsa</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+
+            </thead>
+
+            <tbody id="alunosBody">
+
+                <tr>
+                    <td>#1</td>
+                    <td>Ana Domingos</td>
+                    <td>Informática A</td>
+                    <td>Informática</td>
+                    <td>—</td>
+                    <td>
+                        <span class="status-activo">
+                            Activo
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn-menu">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>#2</td>
+                    <td>Carlos Bumba</td>
+                    <td>Gestão B</td>
+                    <td>Gestão</td>
+                    <td>
+                        <span class="badge-bolsa">
+                            25%
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-activo">
+                            Activo
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn-menu">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- MODAL -->
+
+<div
+    class="modal-overlay"
+    id="modalAluno"
+>
+
+    <div class="modal-aluno">
+
+        <h3>Registar Novo Aluno</h3>
+
+        <input
+            type="text"
+            placeholder="Nome completo"
+        >
+
+        <input
+            type="text"
+            placeholder="Número do aluno"
+        >
+
+        <select>
+            <option>Selecionar turma</option>
+            <option>Informática A</option>
+            <option>Gestão B</option>
+            <option>Direito A</option>
+        </select>
+
+        <input
+            type="number"
+            placeholder="Bolsa (%)"
+        >
+
+        <div class="modal-footer">
+
+            <button
+                class="btn-cancelar"
+                onclick="fecharModalAluno()"
+            >
+                Cancelar
+            </button>
+
+            <button class="btn-guardar">
+                Registar
+            </button>
+
+        </div>
+
+    </div>
+
+</div>

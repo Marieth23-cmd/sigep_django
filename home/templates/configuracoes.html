@@ -1,0 +1,150 @@
+<div class="configuracoes-container">
+
+    <div class="configuracoes-card">
+
+        <div class="configuracoes-tabs">
+
+            <button class="tab-btn active" onclick="abrirTab(event, 'geral')">
+                Geral
+            </button>
+
+            <button class="tab-btn" onclick="abrirTab(event, 'utilizadores')">
+                Utilizadores & Perfis
+            </button>
+
+        </div>
+
+        <div class="configuracoes-content">
+
+            <!-- GERAL - Apenas idioma editável -->
+            <div id="geral" class="tab-pane active">
+
+                <div class="config-grid">
+
+                    <div class="field-group">
+                        <label>Idioma</label>
+                        <select class="form-select">
+                            <option selected>Português (PT)</option>
+                            <option>Inglês (EN)</option>
+                            <option>Espanhol (ES)</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="info-block">
+                    <h5>Informações da Escola (Somente Leitura)</h5>
+                    <div class="config-grid">
+                        <div class="field-group">
+                            <label>Nome da Escola</label>
+                            <input type="text" value="Escola Modelo de Luanda" disabled>
+                        </div>
+                        <div class="field-group">
+                            <label>NIF</label>
+                            <input type="text" value="5417...0987" disabled>
+                        </div>
+                        <div class="field-group">
+                            <label>Endereço</label>
+                            <input type="text" value="Rua Comandante Valódia, Luanda" disabled>
+                        </div>
+                        <div class="field-group">
+                            <label>Telefone</label>
+                            <input type="text" value="+244 923 000 000" disabled>
+                        </div>
+                        <div class="field-group">
+                            <label>Moeda</label>
+                            <input type="text" value="Kwanza (Kz)" disabled>
+                        </div>
+                        <div class="field-group">
+                            <label>Fuso horário</label>
+                            <input type="text" value="África/Luanda" disabled>
+                        </div>
+                        <div class="field-group">
+                            <label>Ano lectivo</label>
+                            <input type="text" value="2025/2026" disabled>
+                        </div>
+                    </div>
+                    <p class="info-text">💡 Estas informações são geridas pelo administrador da plataforma</p>
+                </div>
+
+            </div>
+
+            <!-- UTILIZADORES -->
+            <div id="utilizadores" class="tab-pane">
+
+                <div class="utilizadores-list">
+
+                    <div class="utilizador-card" id="user-1">
+                        <div class="user-info">
+                            <h4>Administrador</h4>
+                            <p>admin@sigep.ao</p>
+                            <span class="perfil-badge">Admin</span>
+                        </div>
+                        <button class="btn-editar" onclick="editarUtilizador(1)">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                    </div>
+
+                    <div class="utilizador-card" id="user-2">
+                        <div class="user-info">
+                            <h4>Maria Finanças</h4>
+                            <p>financas@sigep.ao</p>
+                            <span class="perfil-badge">Finanças</span>
+                        </div>
+                        <button class="btn-editar" onclick="editarUtilizador(2)">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                    </div>
+
+                    <div class="utilizador-card" id="user-3">
+                        <div class="user-info">
+                            <h4>Recepção</h4>
+                            <p>recepcao@sigep.ao</p>
+                            <span class="perfil-badge">Recepção</span>
+                        </div>
+                        <button class="btn-editar" onclick="editarUtilizador(3)">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Modal de Edição -->
+            <div id="modal-editar" class="modal-overlay" onclick="fecharModal(event)">
+                <div class="modal-content" onclick="event.stopPropagation()">
+                    <div class="modal-header">
+                        <h3>Editar Utilizador</h3>
+                        <button class="btn-fechar" onclick="fecharModal()">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="field-group">
+                            <label>Nome Completo</label>
+                            <input type="text" id="edit-nome" placeholder="Nome do utilizador">
+                        </div>
+                        <div class="field-group">
+                            <label>Email</label>
+                            <input type="email" id="edit-email" placeholder="email@escola.ao">
+                        </div>
+                        <div class="field-group">
+                            <label>Nova Senha</label>
+                            <input type="password" id="edit-senha" placeholder="Deixe em branco para manter a atual">
+                        </div>
+                        <div class="field-group">
+                            <label>Confirmar Senha</label>
+                            <input type="password" id="edit-senha-confirm" placeholder="Confirme a senha">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+                        <button class="btn-salvar" onclick="salvarUtilizador()">Salvar Alterações</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

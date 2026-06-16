@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+
+    {% load static %}
+
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <title>SIGEP</title>
+</head>
+<body>
+
+    {% include 'sidebar.html' %}
+
+    <div class="main-content">
+
+       
+     {% include 'header.html' %}
+        <div class="content">
+           
+            <div id="inicio" class="tab-content active">
+                {% include 'inicio.html' %}
+            </div>
+
+            
+             
+            <div id="alunos" class="tab-content">~
+                
+                {% include 'alunos.html' %}
+            </div>
+
+               
+            <div id="cursos" class="tab-content">
+                {% include 'cursos.html' %}
+            </div>
+
+               
+            <div id="turmas" class="tab-content">
+                {% include 'turmas.html' %}
+            </div>
+            
+               
+           
+            <div id="pagamentos" class="tab-content">
+                {% include 'pagamentos.html' %}
+            </div>
+
+
+            <div id="relatorios" class="tab-content">
+                {% include 'relatorios.html' %}
+            </div>
+
+                
+            <div id="configuracoes" class="tab-content">
+                {% include 'configuracoes.html' %}
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="{% static 'js/dashboard.js' %}"></script>
+
+</body>
+</html>
