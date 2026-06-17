@@ -1,6 +1,8 @@
 from decimal import Decimal
 
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
+
 from .models import (
     Escola,
     Usuario,
@@ -36,8 +38,6 @@ class CursoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-from rest_framework.validators import UniqueTogetherValidator
-
 class TurmaSerializer(serializers.ModelSerializer):
     escola_nome = serializers.CharField(source='id_escola.nome', read_only=True)
     curso_nome = serializers.CharField(source='id_curso.nome', read_only=True)
@@ -45,13 +45,48 @@ class TurmaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Turma
         fields = '__all__'
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Turma.objects.all(),
-                fields=['id_curso', 'nome'],
-                message='Já existe uma turma com esse nome para este curso.'
-            )
-        ]
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+
+        escola = attrs.get('id_escola') or getattr(self.instance, 'id_escola', None)
+        curso = attrs.get('id_curso') or getattr(self.instance, 'id_curso', None)
+        nome = attrs.get('nome') or getattr(self.instance, 'nome', None)
+        periodo = attrs.get('periodo') or getattr(self.instance, 'periodo', None)
+        sala = attrs.get('sala') if 'sala' in attrs else getattr(self.instance, 'sala', None)
+        ano_letivo = attrs.get('ano_letivo') if 'ano_letivo' in attrs else getattr(self.instance, 'ano_letivo', None)
+
+        # Regra: a mesma turma pode existir em outro periodo, mas nao duplicada no mesmo curso e periodo.
+        turma_duplicada = Turma.objects.filter(
+            id_curso=curso,
+            nome=nome,
+            periodo=periodo,
+        )
+        if self.instance:
+            turma_duplicada = turma_duplicada.exclude(pk=self.instance.pk)
+        if turma_duplicada.exists():
+            raise serializers.ValidationError({
+                'nome': 'Ja existe uma turma com este nome para este curso e periodo.'
+            })
+
+        # Regra: uma sala so pode receber uma turma por periodo no mesmo ano letivo.
+        sala_ocupada = Turma.objects.filter(
+            id_escola=escola,
+            periodo=periodo,
+            sala=sala,
+        )
+        if ano_letivo is None:
+            sala_ocupada = sala_ocupada.filter(ano_letivo__isnull=True)
+        else:
+            sala_ocupada = sala_ocupada.filter(ano_letivo=ano_letivo)
+        if self.instance:
+            sala_ocupada = sala_ocupada.exclude(pk=self.instance.pk)
+        if sala_ocupada.exists():
+            raise serializers.ValidationError({
+                'sala': 'Esta sala ja esta ocupada por outra turma neste periodo.'
+            })
+
+        return attrs
 
 
 class BolsaSerializer(serializers.ModelSerializer):
@@ -61,19 +96,21 @@ class BolsaSerializer(serializers.ModelSerializer):
         model = Bolsa
         fields = '__all__'
 
+
 class AlunoSerializer(serializers.ModelSerializer):
     escola_nome = serializers.CharField(source='id_escola.nome', read_only=True)
     turma_nome = serializers.CharField(source='id_turma.nome', read_only=True)
     sala = serializers.IntegerField(source='id_turma.sala', read_only=True)
     periodo = serializers.CharField(source='id_turma.periodo', read_only=True)
     propina_mensal = serializers.DecimalField(source='id_turma.id_curso.propina_mensal', max_digits=10, decimal_places=2, read_only=True)
-    curso_nome = serializers.CharField(source='id_turma.id_curso.nome', read_only=True)  # ✅ novo
+    curso_nome = serializers.CharField(source='id_turma.id_curso.nome', read_only=True)
     bolsa_nome = serializers.CharField(source='id_bolsa.nome', read_only=True, allow_null=True)
     bolsa_desconto = serializers.DecimalField(source='id_bolsa.percentual_desconto', max_digits=5, decimal_places=2, read_only=True, allow_null=True)
 
     class Meta:
         model = Aluno
         fields = '__all__'
+
 
 class PagamentoSerializer(serializers.ModelSerializer):
     aluno_nome = serializers.CharField(source='id_aluno.nome', read_only=True)
@@ -112,6 +149,7 @@ class PagamentoSerializer(serializers.ModelSerializer):
         if not aluno:
             return attrs
 
+        # Regra: o pagamento mensal deve bater exatamente com a propina devida do aluno.
         valor_devido = self._valor_devido(aluno)
         valor_propina = attrs.get('valor_propina')
         valor_pago = attrs.get('valor_pago')

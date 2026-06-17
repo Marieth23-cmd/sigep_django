@@ -146,7 +146,7 @@ function preencherTabelaAlunos(alunos) {
             <td>#${aluno.numero_aluno}</td>
             <td>${aluno.nome}</td>
             <td>${aluno.turma_nome || '-'}</td>
-            <td>${aluno.escola_nome || '-'}</td>
+            <td>${aluno.curso_nome || '-'}</td>
             <td>${aluno.bolsa_nome ? `<span class="badge-bolsa">${aluno.bolsa_nome}</span>` : '—'}</td>
             <td><span class="status-${aluno.estado.toLowerCase()}">${aluno.estado}</span></td>
             <td>
@@ -167,22 +167,26 @@ function filtrarAlunos() {
     );
     preencherTabelaAlunos(filtrados);
 }
-
-// ✅ NOME ÚNICO — sem conflito com a página de turmas
 async function carregarTurmasSelect() {
     try {
         const response = await axios.get(API_BASE + 'turmas/');
         const turmas = response.data.results || response.data;
         const select = document.getElementById('turmaAluno');
+
         select.innerHTML = '<option value="">Selecionar turma</option>';
 
         turmas.forEach(turma => {
             const option = document.createElement('option');
             option.value = turma.id_turma;
-            option.textContent = turma.nome + ' — ' + (turma.curso_nome || '') + ' (' + turma.periodo + ')';
-            option.setAttribute('data-id-escola', turma.id_escola || turma.id_escola_id);
+            option.textContent =
+                turma.nome +
+                ' — ' +
+                (turma.curso_nome || '') +
+                ' (' + turma.periodo + ')';
+
             select.appendChild(option);
         });
+
     } catch (error) {
         console.error('Erro ao carregar turmas:', error);
     }
@@ -216,7 +220,6 @@ function fecharModalAluno(event) {
     limparFormulario();
 }
 
-// ✅ SEM dataNascimento
 function limparFormulario() {
     document.getElementById('nomealuno').value = '';
     document.getElementById('numeroAluno').value = '';
@@ -237,14 +240,6 @@ async function salvarAluno() {
         return;
     }
 
-    const turmaSelect = document.getElementById('turmaAluno');
-    const selectedOption = turmaSelect.options[turmaSelect.selectedIndex];
-    const idEscola = selectedOption ? parseInt(selectedOption.getAttribute('data-id-escola'), 10) : null;
-
-    if (!idEscola) {
-        mostrarMensagem('mensagemModal', 'Não foi possível determinar a escola da turma', 'error');
-        return;
-    }
 
     const dados = {
         nome: nomealuno,
@@ -254,7 +249,7 @@ async function salvarAluno() {
         telefone_encarregado: document.getElementById('telefoneEncarregado').value || null,
         sexo: document.getElementById('sexoAluno').value || null,
         estado: 'ACTIVO',
-        id_escola: idEscola,
+        id_escola: 3,
     };
 
     try {

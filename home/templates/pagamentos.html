@@ -43,9 +43,6 @@
 
                 <select id="anoPagamento" onchange="atualizarPagamentosMes()">
                     <option value="">Selecionar ano</option>
-                    <option value="2024">2024</option>
-                    <option value="2025">2025</option>
-                    <option value="2026" selected>2026</option>
                 </select>
             </div>
 
@@ -175,12 +172,29 @@ let alunoSearchRequest = 0;
 
 function iniciarPaginaPagamentos() {
     const hoje = new Date();
+    preencherAnosPagamento();
     document.getElementById('mesPagamento').value = hoje.getMonth() + 1;
     document.getElementById('anoPagamento').value = hoje.getFullYear();
     atualizarPagamentosMes();
 }
 
 iniciarPaginaPagamentos();
+
+function preencherAnosPagamento() {
+    const select = document.getElementById('anoPagamento');
+    const anoAtual = new Date().getFullYear();
+    const primeiroAno = anoAtual - 5;
+    const ultimoAno = anoAtual + 2;
+
+    select.innerHTML = '<option value="">Selecionar ano</option>';
+
+    for (let ano = ultimoAno; ano >= primeiroAno; ano--) {
+        const option = document.createElement('option');
+        option.value = ano;
+        option.textContent = ano;
+        select.appendChild(option);
+    }
+}
 
 function atualizarPagamentosMes() {
     carregarPagamentos();

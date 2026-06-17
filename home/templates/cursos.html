@@ -78,7 +78,7 @@ let cursos = [];
 
 document.addEventListener('DOMContentLoaded', function() {
     carregarCursos();
-    carregarEscolas();
+  
 });
 
 async function carregarCursos() {
@@ -136,23 +136,6 @@ function abrirModalCurso() {
     document.getElementById('modalCurso').style.display = 'flex';
 }
 
-async function carregarEscolas() {
-    try {
-        const response = await axios.get(API_BASE + 'escolas/');
-        const escolas = response.data.results || response.data;
-        const select = document.getElementById('escolaCurso');
-        if (!select) return;
-        select.innerHTML = '<option value="">Selecionar escola</option>';
-        escolas.forEach(escola => {
-            const option = document.createElement('option');
-            option.value = escola.id_escola;
-            option.textContent = escola.nome;
-            select.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Erro ao carregar escolas:', error);
-    }
-}
 
 function fecharModalCurso(event) {
     if (event && event.target.id !== 'modalCurso') return;
@@ -179,7 +162,7 @@ async function salvarCurso() {
         const dados = {
             nome: nomeCurso,
             propina_mensal: parseFloat(propinaMensalCurso) || 0,
-            id_escola: 1
+            id_escola: 3
         };
 
         const response = await axios.post(API_BASE + 'cursos/', dados);
