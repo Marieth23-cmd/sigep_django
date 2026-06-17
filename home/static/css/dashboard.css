@@ -92,6 +92,7 @@ body {
 
 .tab-content.active {
   display: block;
+  height: 100%;
 }
 
 .main-content {
