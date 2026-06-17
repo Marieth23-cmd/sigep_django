@@ -1,4 +1,4 @@
-const buttons = document.querySelectorAll(".tab-btn");
+const buttons = document.querySelectorAll(".sidebar .tab-btn");
 const contents = document.querySelectorAll(".tab-content");
 
 // Restaurar a aba ativa após reload
