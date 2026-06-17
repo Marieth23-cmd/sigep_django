@@ -98,7 +98,7 @@ body {
   margin-left: 280px;
   height: 100vh;
   overflow-y: auto;
-  padding: 20px;
+  padding: 110px 20px 20px; /* header é fixed (70px) */
   width: calc(100% - 280px);
 }
 
@@ -396,7 +396,7 @@ table th {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 50px;
+  margin-bottom: 0;
   max-width: calc(100% - 280px);
   z-index: 1000;
 }
