@@ -855,6 +855,7 @@ table th {
 
 .cursos-page {
   padding: 20px;
+  margin-top: 20px;
 }
 
 .cursos-topo {
@@ -990,6 +991,8 @@ table th {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  margin-top: 20px;
+  padding: 20px;
 }
 
 .turmas-header {
