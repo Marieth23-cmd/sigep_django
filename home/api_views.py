@@ -1,5 +1,6 @@
 from datetime import date
 
+from django.db.models import Q
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -148,14 +149,25 @@ class BolsaViewSet(viewsets.ModelViewSet):
 class AlunoViewSet(viewsets.ModelViewSet):
     queryset = Aluno.objects.all()
     serializer_class = AlunoSerializer
-    search_fields = ['nome', 'numero_aluno', 'id_turma__nome', 'id_turma__id_curso__nome']
 
     def get_queryset(self):
-        return (
+        queryset = (
             Aluno.objects
             .select_related('id_escola', 'id_turma', 'id_turma__id_curso', 'id_bolsa')
             .order_by('nome', 'numero_aluno')
         )
+        termo = self.request.query_params.get('search')
+        if termo:
+            termo_limpo = termo.replace('#', '').strip()
+            filtro = (
+                Q(nome__icontains=termo) |
+                Q(id_turma__nome__icontains=termo) |
+                Q(id_turma__id_curso__nome__icontains=termo)
+            )
+            if termo_limpo.isdigit():
+                filtro |= Q(numero_aluno=int(termo_limpo))
+            queryset = queryset.filter(filtro)
+        return queryset
 
     @action(detail=False, methods=['get'])
     def por_escola(self, request):

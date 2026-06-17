@@ -171,12 +171,12 @@
 let pagamentos = [];
 let alunos = [];
 let alunoSelecionado = null;
+let alunoSearchRequest = 0;
 
 function iniciarPaginaPagamentos() {
     const hoje = new Date();
     document.getElementById('mesPagamento').value = hoje.getMonth() + 1;
     document.getElementById('anoPagamento').value = hoje.getFullYear();
-    carregarAlunos();
     atualizarPagamentosMes();
 }
 
@@ -252,18 +252,11 @@ function preencherTabelaPagamentos(pagsList) {
     });
 }
 
-async function carregarAlunos() {
-    try {
-        const response = await axios.get(API_BASE + 'alunos/');
-        alunos = response.data.results || response.data;
-    } catch (error) {
-        console.error('Erro ao carregar alunos:', error);
-    }
-}
-
-function pesquisarAlunoPagamento() {
+async function pesquisarAlunoPagamento() {
     const termo = normalizarTexto(document.getElementById('pesquisaAlunoPagamento').value);
     const resultados = document.getElementById('resultadosAlunoPagamento');
+    const requestId = ++alunoSearchRequest;
+
     document.getElementById('alunoModalPagamento').value = '';
     alunoSelecionado = null;
     atualizarResumoAlunoSelecionado();
@@ -274,25 +267,25 @@ function pesquisarAlunoPagamento() {
         return;
     }
 
-    const filtrados = alunos.filter(aluno => {
-        const texto = [
-            aluno.nome,
-            aluno.numero_aluno,
-            aluno.turma_nome,
-            aluno.curso_nome,
-            aluno.sala
-        ].join(' ');
-        return normalizarTexto(texto).includes(termo);
-    }).slice(0, 8);
+    resultados.style.display = 'block';
+    resultados.innerHTML = '<div class="aluno-search-empty">A pesquisar...</div>';
 
-    if (filtrados.length === 0) {
-        resultados.style.display = 'block';
+    try {
+        const response = await axios.get(API_BASE + 'alunos/?search=' + encodeURIComponent(termo));
+        if (requestId !== alunoSearchRequest) return;
+        alunos = (response.data.results || response.data).slice(0, 8);
+    } catch (error) {
+        console.error('Erro ao pesquisar alunos:', error);
+        resultados.innerHTML = '<div class="aluno-search-empty">Erro ao pesquisar alunos</div>';
+        return;
+    }
+
+    if (alunos.length === 0) {
         resultados.innerHTML = '<div class="aluno-search-empty">Nenhum aluno encontrado</div>';
         return;
     }
 
-    resultados.style.display = 'block';
-    resultados.innerHTML = filtrados.map(aluno => `
+    resultados.innerHTML = alunos.map(aluno => `
         <button type="button" class="aluno-search-item" onclick="selecionarAlunoPagamento(${aluno.id_aluno})">
             <strong>#${aluno.numero_aluno} - ${aluno.nome}</strong>
             <span>${aluno.curso_nome || '-'} / ${aluno.turma_nome || '-'} / Sala ${aluno.sala || '-'}</span>
