@@ -2,7 +2,7 @@
 
     <div class="pagamentos-header">
         <div>
-            <h2>Gestão de Pagamentos</h2>
+            <h2>Gestao de Pagamentos</h2>
             <p>Registo mensal de propinas</p>
         </div>
 
@@ -12,28 +12,24 @@
         </button>
     </div>
 
-    <!-- Estatísticas -->
-
     <div class="pagamentos-stats" id="statsContainer">
-        <p>Carregando estatísticas...</p>
+        <p>Carregando estatisticas...</p>
     </div>
 
     <div id="mensagemPagamentos"></div>
-
-    <!-- Tabela -->
 
     <div class="table-card">
 
         <div class="table-header">
 
-            <h3>Histórico de Pagamentos</h3>
+            <h3>Historico do mes selecionado</h3>
 
             <div>
-                <select id="mesPagamento" onchange="carregarPagamentos()">
-                    <option value="">Selecionar mês</option>
+                <select id="mesPagamento" onchange="atualizarPagamentosMes()">
+                    <option value="">Selecionar mes</option>
                     <option value="1">Janeiro</option>
                     <option value="2">Fevereiro</option>
-                    <option value="3">Março</option>
+                    <option value="3">Marco</option>
                     <option value="4">Abril</option>
                     <option value="5">Maio</option>
                     <option value="6">Junho</option>
@@ -45,7 +41,7 @@
                     <option value="12">Dezembro</option>
                 </select>
 
-                <select id="anoPagamento" onchange="carregarPagamentos()">
+                <select id="anoPagamento" onchange="atualizarPagamentosMes()">
                     <option value="">Selecionar ano</option>
                     <option value="2024">2024</option>
                     <option value="2025">2025</option>
@@ -63,19 +59,20 @@
 
             <thead>
                 <tr>
+                    <th>N.</th>
                     <th>Aluno</th>
+                    <th>Curso</th>
                     <th>Turma</th>
-                    <th>Mês/Ano</th>
+                    <th>Sala</th>
+                    <th>Mes/Ano</th>
                     <th>Propina</th>
-                    <th>Pagou</th>
+                    <th>Pago</th>
                     <th>Data</th>
-                    <th>Método</th>
+                    <th>Metodo</th>
                 </tr>
             </thead>
 
-            <tbody id="pagamentosBody">
-                <!-- Preenchida via JavaScript -->
-            </tbody>
+            <tbody id="pagamentosBody"></tbody>
 
         </table>
 
@@ -83,45 +80,56 @@
 
 </div>
 
-<!-- MODAL PAGAMENTO -->
 <div class="modal-overlay" id="modalPagamento" onclick="fecharModalPagamento(event)">
 
-    <div class="modal-aluno" onclick="event.stopPropagation()">
+    <div class="modal-aluno modal-pagamento" onclick="event.stopPropagation()">
 
         <h3>Registar Pagamento</h3>
         <div id="mensagemPagamentoModal"></div>
 
-        <select id="alunoModalPagamento">
-            <option value="">Selecionar aluno</option>
-            <!-- Preenchida via JavaScript -->
-        </select>
+        <div class="pagamento-aluno-search">
+            <input
+                type="text"
+                id="pesquisaAlunoPagamento"
+                placeholder="Pesquisar por nome, numero, turma ou curso"
+                autocomplete="off"
+                oninput="pesquisarAlunoPagamento()"
+            >
+            <input type="hidden" id="alunoModalPagamento">
+            <div class="aluno-search-results" id="resultadosAlunoPagamento"></div>
+            <div class="aluno-selecionado" id="alunoSelecionadoPagamento"></div>
+        </div>
 
         <input
             type="number"
             id="mesPagamentoModal"
-            placeholder="Mês (1-12)"
+            placeholder="Mes (1-12)"
             min="1"
             max="12"
+            oninput="validarPagamentoExistente()"
         >
 
         <input
             type="number"
             id="anoPagamentoModal"
             placeholder="Ano"
+            oninput="validarPagamentoExistente()"
         >
 
         <input
             type="number"
             id="valorPropina"
-            placeholder="Valor da Propina"
+            placeholder="Valor da propina"
             step="0.01"
+            readonly
         >
 
         <input
             type="number"
             id="valorPago"
-            placeholder="Valor Pago"
+            placeholder="Valor pago"
             step="0.01"
+            readonly
         >
 
         <input
@@ -131,32 +139,27 @@
         >
 
         <select id="metodoPagamento">
-            <option value="">Selecionar método</option>
+            <option value="">Selecionar metodo</option>
             <option value="Dinheiro">Dinheiro</option>
-            <option value="Transferência">Transferência</option>
+            <option value="Transferencia">Transferencia</option>
             <option value="Cheque">Cheque</option>
-            <option value="Cartão">Cartão</option>
+            <option value="Cartao">Cartao</option>
         </select>
 
         <textarea
             id="observacaoPagamento"
-            placeholder="Observações"
+            placeholder="Observacoes"
             rows="3"
         ></textarea>
 
         <div class="modal-footer">
-
-            <button
-                class="btn-cancelar"
-                onclick="fecharModalPagamento()"
-            >
+            <button class="btn-cancelar" onclick="fecharModalPagamento()">
                 Cancelar
             </button>
 
-            <button class="btn-guardar" onclick="salvarPagamento()">
+            <button class="btn-guardar" id="btnSalvarPagamento" onclick="salvarPagamento()">
                 Registar
             </button>
-
         </div>
 
     </div>
@@ -167,16 +170,36 @@
 
 let pagamentos = [];
 let alunos = [];
+let alunoSelecionado = null;
 
 function iniciarPaginaPagamentos() {
-    const mesAtual = new Date().getMonth() + 1;
-    document.getElementById('mesPagamento').value = mesAtual;
-    carregarPagamentos();
+    const hoje = new Date();
+    document.getElementById('mesPagamento').value = hoje.getMonth() + 1;
+    document.getElementById('anoPagamento').value = hoje.getFullYear();
     carregarAlunos();
-    carregarEstatisticas();
+    atualizarPagamentosMes();
 }
 
 iniciarPaginaPagamentos();
+
+function atualizarPagamentosMes() {
+    carregarPagamentos();
+    carregarEstatisticas();
+}
+
+function normalizarTexto(valor) {
+    return String(valor || '').toLowerCase();
+}
+
+function obterValorDevido(aluno) {
+    const propina = parseFloat(aluno.propina_mensal) || 0;
+    const desconto = parseFloat(aluno.bolsa_desconto) || 0;
+    return propina * (100 - desconto) / 100;
+}
+
+function formatarKz(valor) {
+    return (parseFloat(valor) || 0).toFixed(2) + ' Kz';
+}
 
 async function carregarPagamentos() {
     document.getElementById('loadingPagamentos').classList.add('active');
@@ -205,7 +228,7 @@ function preencherTabelaPagamentos(pagsList) {
     tbody.innerHTML = '';
 
     if (pagsList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">Nenhum pagamento encontrado</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px;">Nenhum pagamento encontrado para este mes</td></tr>';
         return;
     }
 
@@ -213,15 +236,15 @@ function preencherTabelaPagamentos(pagsList) {
         const tr = document.createElement('tr');
         const data = new Date(pag.data_pagamento);
 
-        const valorPropina = parseFloat(pag.valor_propina) || 0;
-        const valorPago = parseFloat(pag.valor_pago) || 0;
-
         tr.innerHTML = `
-            <td>${pag.aluno_nome}</td>
-            <td>-</td>
+            <td>#${pag.aluno_numero || '-'}</td>
+            <td>${pag.aluno_nome || '-'}</td>
+            <td>${pag.curso_nome || '-'}</td>
+            <td>${pag.turma_nome || '-'}</td>
+            <td>${pag.sala ? 'Sala ' + pag.sala : '-'}</td>
             <td>${pag.mes}/${pag.ano}</td>
-            <td>${valorPropina.toFixed(2)} Kz</td>
-            <td>${valorPago.toFixed(2)} Kz</td>
+            <td>${formatarKz(pag.valor_propina)}</td>
+            <td>${formatarKz(pag.valor_pago)}</td>
             <td>${data.toLocaleDateString('pt-PT')}</td>
             <td>${pag.metodo_pagamento || '-'}</td>
         `;
@@ -233,37 +256,136 @@ async function carregarAlunos() {
     try {
         const response = await axios.get(API_BASE + 'alunos/');
         alunos = response.data.results || response.data;
-        const select = document.getElementById('alunoModalPagamento');
-
-        alunos.forEach(aluno => {
-            const option = document.createElement('option');
-            option.value = aluno.id_aluno;
-            option.textContent = aluno.nome;
-            select.appendChild(option);
-        });
     } catch (error) {
         console.error('Erro ao carregar alunos:', error);
     }
 }
 
-async function carregarEstatisticas() {
-    try {
-        const response = await axios.get(API_BASE + 'pagamentos/');
-        const todosPagamentos = response.data.results || response.data;
+function pesquisarAlunoPagamento() {
+    const termo = normalizarTexto(document.getElementById('pesquisaAlunoPagamento').value);
+    const resultados = document.getElementById('resultadosAlunoPagamento');
+    document.getElementById('alunoModalPagamento').value = '';
+    alunoSelecionado = null;
+    atualizarResumoAlunoSelecionado();
 
-        const pago = todosPagamentos.filter(p => parseFloat(p.valor_pago) >= parseFloat(p.valor_propina)).length;
-        const pendente = todosPagamentos.filter(p => parseFloat(p.valor_pago) === 0).length;
-        const atrasado = todosPagamentos.filter(p => parseFloat(p.valor_pago) > 0 && parseFloat(p.valor_pago) < parseFloat(p.valor_propina)).length;
+    if (termo.length < 2) {
+        resultados.style.display = 'none';
+        resultados.innerHTML = '';
+        return;
+    }
+
+    const filtrados = alunos.filter(aluno => {
+        const texto = [
+            aluno.nome,
+            aluno.numero_aluno,
+            aluno.turma_nome,
+            aluno.curso_nome,
+            aluno.sala
+        ].join(' ');
+        return normalizarTexto(texto).includes(termo);
+    }).slice(0, 8);
+
+    if (filtrados.length === 0) {
+        resultados.style.display = 'block';
+        resultados.innerHTML = '<div class="aluno-search-empty">Nenhum aluno encontrado</div>';
+        return;
+    }
+
+    resultados.style.display = 'block';
+    resultados.innerHTML = filtrados.map(aluno => `
+        <button type="button" class="aluno-search-item" onclick="selecionarAlunoPagamento(${aluno.id_aluno})">
+            <strong>#${aluno.numero_aluno} - ${aluno.nome}</strong>
+            <span>${aluno.curso_nome || '-'} / ${aluno.turma_nome || '-'} / Sala ${aluno.sala || '-'}</span>
+        </button>
+    `).join('');
+}
+
+function selecionarAlunoPagamento(alunoId) {
+    alunoSelecionado = alunos.find(aluno => aluno.id_aluno === alunoId);
+    if (!alunoSelecionado) return;
+
+    const valorDevido = obterValorDevido(alunoSelecionado).toFixed(2);
+    document.getElementById('alunoModalPagamento').value = alunoSelecionado.id_aluno;
+    document.getElementById('pesquisaAlunoPagamento').value = '#' + alunoSelecionado.numero_aluno + ' - ' + alunoSelecionado.nome;
+    document.getElementById('valorPropina').value = valorDevido;
+    document.getElementById('valorPago').value = valorDevido;
+    document.getElementById('resultadosAlunoPagamento').style.display = 'none';
+    atualizarResumoAlunoSelecionado();
+    validarPagamentoExistente();
+}
+
+function atualizarResumoAlunoSelecionado() {
+    const resumo = document.getElementById('alunoSelecionadoPagamento');
+    if (!alunoSelecionado) {
+        resumo.innerHTML = '';
+        resumo.style.display = 'none';
+        return;
+    }
+
+    const desconto = parseFloat(alunoSelecionado.bolsa_desconto) || 0;
+    resumo.style.display = 'block';
+    resumo.innerHTML = `
+        <strong>${alunoSelecionado.nome}</strong>
+        <span>N. ${alunoSelecionado.numero_aluno} / ${alunoSelecionado.curso_nome || '-'} / ${alunoSelecionado.turma_nome || '-'} / Sala ${alunoSelecionado.sala || '-'}</span>
+        <span>Propina a pagar: ${formatarKz(obterValorDevido(alunoSelecionado))}${desconto ? ' com bolsa de ' + desconto + '%' : ''}</span>
+    `;
+}
+
+function validarPagamentoExistente() {
+    const alunoId = parseInt(document.getElementById('alunoModalPagamento').value, 10);
+    const mes = parseInt(document.getElementById('mesPagamentoModal').value, 10);
+    const ano = parseInt(document.getElementById('anoPagamentoModal').value, 10);
+    const btn = document.getElementById('btnSalvarPagamento');
+
+    btn.disabled = false;
+
+    if (!alunoId || !mes || !ano) return false;
+
+    const jaExiste = pagamentos.some(pag =>
+        parseInt(pag.id_aluno, 10) === alunoId &&
+        parseInt(pag.mes, 10) === mes &&
+        parseInt(pag.ano, 10) === ano
+    );
+
+    if (jaExiste) {
+        mostrarMensagem('mensagemPagamentoModal', 'Este aluno ja pagou este mes. Para dois meses adiantados, registe outro mes.', 'error');
+        btn.disabled = true;
+        return true;
+    }
+
+    document.getElementById('mensagemPagamentoModal').innerHTML = '';
+    document.getElementById('mensagemPagamentoModal').className = '';
+    return false;
+}
+
+async function carregarEstatisticas() {
+    const mes = document.getElementById('mesPagamento').value;
+    const ano = document.getElementById('anoPagamento').value;
+    if (!mes || !ano) return;
+
+    try {
+        const response = await axios.get(API_BASE + 'pagamentos/resumo/?mes=' + mes + '&ano=' + ano);
+        const stats = response.data;
 
         const statsContainer = document.getElementById('statsContainer');
         statsContainer.innerHTML = `
+            <div class="pagamento-stat-card">
+                <div class="pagamento-icon total">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div>
+                    <p class="stat-label">Alunos activos</p>
+                    <h3>${stats.total_alunos}</h3>
+                </div>
+            </div>
+
             <div class="pagamento-stat-card">
                 <div class="pagamento-icon pago">
                     <i class="fas fa-check-circle"></i>
                 </div>
                 <div>
-                    <p class="stat-label">Pagos</p>
-                    <h3>${pago}</h3>
+                    <p class="stat-label">Pagos no mes</p>
+                    <h3>${stats.pagos}</h3>
                 </div>
             </div>
 
@@ -272,8 +394,8 @@ async function carregarEstatisticas() {
                     <i class="fas fa-clock"></i>
                 </div>
                 <div>
-                    <p class="stat-label">Pendentes</p>
-                    <h3>${pendente}</h3>
+                    <p class="stat-label">Em falta no mes</p>
+                    <h3>${stats.em_falta}</h3>
                 </div>
             </div>
 
@@ -282,17 +404,24 @@ async function carregarEstatisticas() {
                     <i class="fas fa-exclamation-circle"></i>
                 </div>
                 <div>
-                    <p class="stat-label">Parciais/Atrasados</p>
-                    <h3>${atrasado}</h3>
+                    <p class="stat-label">Atrasados acumulados</p>
+                    <h3>${stats.atrasados}</h3>
                 </div>
             </div>
         `;
     } catch (error) {
-        console.error('Erro ao carregar estatísticas:', error);
+        console.error('Erro ao carregar estatisticas:', error);
     }
 }
 
 function abrirModalPagamento() {
+    const mes = document.getElementById('mesPagamento').value;
+    const ano = document.getElementById('anoPagamento').value;
+    const hoje = new Date();
+
+    document.getElementById('mesPagamentoModal').value = mes || (hoje.getMonth() + 1);
+    document.getElementById('anoPagamentoModal').value = ano || hoje.getFullYear();
+    document.getElementById('dataPagamento').value = hoje.toISOString().split('T')[0];
     document.getElementById('modalPagamento').style.display = 'flex';
 }
 
@@ -303,7 +432,10 @@ function fecharModalPagamento(event) {
 }
 
 function limparFormularioPagamento() {
+    document.getElementById('pesquisaAlunoPagamento').value = '';
     document.getElementById('alunoModalPagamento').value = '';
+    document.getElementById('resultadosAlunoPagamento').innerHTML = '';
+    document.getElementById('resultadosAlunoPagamento').style.display = 'none';
     document.getElementById('mesPagamentoModal').value = '';
     document.getElementById('anoPagamentoModal').value = '';
     document.getElementById('valorPropina').value = '';
@@ -312,6 +444,10 @@ function limparFormularioPagamento() {
     document.getElementById('metodoPagamento').value = '';
     document.getElementById('observacaoPagamento').value = '';
     document.getElementById('mensagemPagamentoModal').innerHTML = '';
+    document.getElementById('mensagemPagamentoModal').className = '';
+    document.getElementById('btnSalvarPagamento').disabled = false;
+    alunoSelecionado = null;
+    atualizarResumoAlunoSelecionado();
 }
 
 async function salvarPagamento() {
@@ -323,15 +459,17 @@ async function salvarPagamento() {
     const dataPagamento = document.getElementById('dataPagamento').value;
 
     if (!alunoId || !mes || !ano || !valorPropina || !valorPago || !dataPagamento) {
-        mostrarMensagem('mensagemPagamentoModal', 'Preencha todos os campos obrigatórios', 'error');
+        mostrarMensagem('mensagemPagamentoModal', 'Selecione o aluno e preencha os campos obrigatorios', 'error');
         return;
     }
 
+    if (validarPagamentoExistente()) return;
+
     try {
         const dados = {
-            id_aluno: alunoId,
-            mes: mes,
-            ano: ano,
+            id_aluno: parseInt(alunoId, 10),
+            mes: parseInt(mes, 10),
+            ano: parseInt(ano, 10),
             valor_propina: valorPropina,
             valor_pago: valorPago,
             data_pagamento: dataPagamento,
@@ -344,12 +482,15 @@ async function salvarPagamento() {
 
         setTimeout(() => {
             fecharModalPagamento();
-            carregarPagamentos();
-            carregarEstatisticas();
-        }, 1500);
+            document.getElementById('mesPagamento').value = mes;
+            document.getElementById('anoPagamento').value = ano;
+            atualizarPagamentosMes();
+        }, 1000);
     } catch (error) {
         console.error('Erro ao salvar pagamento:', error);
-        mostrarMensagem('mensagemPagamentoModal', 'Erro ao registar pagamento', 'error');
+        const data = error.response?.data;
+        const mensagem = data ? JSON.stringify(data) : 'Erro ao registar pagamento';
+        mostrarMensagem('mensagemPagamentoModal', mensagem, 'error');
     }
 }
 

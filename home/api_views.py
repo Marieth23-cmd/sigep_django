@@ -1,3 +1,5 @@
+from datetime import date
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -146,6 +148,14 @@ class BolsaViewSet(viewsets.ModelViewSet):
 class AlunoViewSet(viewsets.ModelViewSet):
     queryset = Aluno.objects.all()
     serializer_class = AlunoSerializer
+    search_fields = ['nome', 'numero_aluno', 'id_turma__nome', 'id_turma__id_curso__nome']
+
+    def get_queryset(self):
+        return (
+            Aluno.objects
+            .select_related('id_escola', 'id_turma', 'id_turma__id_curso', 'id_bolsa')
+            .order_by('nome', 'numero_aluno')
+        )
 
     @action(detail=False, methods=['get'])
     def por_escola(self, request):
@@ -182,6 +192,13 @@ class PagamentoViewSet(viewsets.ModelViewSet):
     queryset = Pagamento.objects.all()
     serializer_class = PagamentoSerializer
 
+    def get_queryset(self):
+        return (
+            Pagamento.objects
+            .select_related('id_aluno', 'id_aluno__id_turma', 'id_aluno__id_turma__id_curso')
+            .order_by('-ano', '-mes', '-data_pagamento', '-id_pagamento')
+        )
+
     @action(detail=False, methods=['get'])
     def por_aluno(self, request):
         """Retorna pagamentos de um aluno específico"""
@@ -189,7 +206,7 @@ class PagamentoViewSet(viewsets.ModelViewSet):
         if not aluno_id:
             return Response({'erro': 'aluno_id é obrigatório'}, status=status.HTTP_400_BAD_REQUEST)
         
-        pagamentos = Pagamento.objects.filter(id_aluno=aluno_id)
+        pagamentos = self.get_queryset().filter(id_aluno=aluno_id)
         serializer = self.get_serializer(pagamentos, many=True)
         return Response(serializer.data)
 
@@ -202,9 +219,62 @@ class PagamentoViewSet(viewsets.ModelViewSet):
         if not mes or not ano:
             return Response({'erro': 'mes e ano são obrigatórios'}, status=status.HTTP_400_BAD_REQUEST)
         
-        pagamentos = Pagamento.objects.filter(mes=mes, ano=ano)
+        pagamentos = self.get_queryset().filter(mes=mes, ano=ano)
         serializer = self.get_serializer(pagamentos, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def resumo(self, request):
+        """Resumo financeiro do mes/ano selecionado."""
+        mes = request.query_params.get('mes')
+        ano = request.query_params.get('ano')
+
+        if not mes or not ano:
+            return Response({'erro': 'mes e ano sao obrigatorios'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            mes = int(mes)
+            ano = int(ano)
+        except ValueError:
+            return Response({'erro': 'mes e ano devem ser numericos'}, status=status.HTTP_400_BAD_REQUEST)
+
+        alunos_ativos = Aluno.objects.filter(estado='ACTIVO')
+        total_alunos = alunos_ativos.count()
+        alunos_pagos_ids = set(
+            self.get_queryset()
+            .filter(mes=mes, ano=ano, id_aluno__estado='ACTIVO')
+            .values_list('id_aluno_id', flat=True)
+        )
+
+        hoje = date.today()
+        meses_vencidos = []
+        if ano < hoje.year:
+            meses_vencidos = list(range(1, 13))
+        elif ano == hoje.year:
+            meses_vencidos = list(range(1, hoje.month))
+
+        atrasados = 0
+        if meses_vencidos:
+            pagamentos_vencidos = set(
+                self.get_queryset()
+                .filter(ano=ano, mes__in=meses_vencidos, id_aluno__estado='ACTIVO')
+                .values_list('id_aluno_id', 'mes')
+            )
+            for aluno_id in alunos_ativos.values_list('id_aluno', flat=True):
+                if any((aluno_id, mes_vencido) not in pagamentos_vencidos for mes_vencido in meses_vencidos):
+                    atrasados += 1
+
+        pagos = len(alunos_pagos_ids)
+        em_falta = max(total_alunos - pagos, 0)
+
+        return Response({
+            'total_alunos': total_alunos,
+            'pagos': pagos,
+            'em_falta': em_falta,
+            'atrasados': atrasados,
+            'mes': mes,
+            'ano': ano,
+        })
 
 
 class AuditoriaViewSet(viewsets.ModelViewSet):
