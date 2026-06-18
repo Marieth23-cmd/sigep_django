@@ -6,52 +6,22 @@
 
         <div class="chart-header">
             <h3>Receita Esperada vs Real</h3>
-            <p>Análise semestral (milhões Kz)</p>
+            <p>Análise semestral (Kz)</p>
         </div>
 
-        <div class="chart-placeholder">
+        <div class="loading" id="loadingChart">
+            <i class="fas fa-spinner fa-spin"></i> Carregando dados...
+        </div>
 
-            <div class="chart-bar-group">
-                <div class="bar esperada" style="height: 85%;"></div>
-                <div class="bar real" style="height: 74%;"></div>
-                <span>Jan</span>
-            </div>
-
-            <div class="chart-bar-group">
-                <div class="bar esperada" style="height: 88%;"></div>
-                <div class="bar real" style="height: 78%;"></div>
-                <span>Fev</span>
-            </div>
-
-            <div class="chart-bar-group">
-                <div class="bar esperada" style="height: 92%;"></div>
-                <div class="bar real" style="height: 76%;"></div>
-                <span>Mar</span>
-            </div>
-
-            <div class="chart-bar-group">
-                <div class="bar esperada" style="height: 95%;"></div>
-                <div class="bar real" style="height: 84%;"></div>
-                <span>Abr</span>
-            </div>
-
-            <div class="chart-bar-group">
-                <div class="bar esperada" style="height: 100%;"></div>
-                <div class="bar real" style="height: 89%;"></div>
-                <span>Mai</span>
-            </div>
-
-            <div class="chart-bar-group">
-                <div class="bar esperada" style="height: 100%;"></div>
-                <div class="bar real" style="height: 86%;"></div>
-                <span>Jun</span>
-            </div>
-
+        <div class="chart-placeholder" id="chartContainer">
+            <!-- Preenchida via JavaScript -->
         </div>
 
     </div>
 
     <!-- Relatórios -->
+
+    <div id="mensagemRelatorios"></div>
 
     <div class="relatorios-grid">
 
@@ -65,12 +35,12 @@
 
                 <div>
                     <h4>Receita Mensal</h4>
-                    <p>Resumo financeiro do mês corrente • Junho 2026</p>
+                    <p id="descRelatorio1">Resumo financeiro do mês corrente</p>
                 </div>
 
             </div>
 
-            <button class="btn-exportar">
+            <button class="btn-exportar" onclick="exportarReceitaMensal()">
                 <i class="fas fa-download"></i>
                 Exportar
             </button>
@@ -87,12 +57,12 @@
 
                 <div>
                     <h4>Alunos Activos</h4>
-                    <p>Listagem completa por curso • Junho 2026</p>
+                    <p id="descRelatorio2">Listagem completa por curso</p>
                 </div>
 
             </div>
 
-            <button class="btn-exportar">
+            <button class="btn-exportar" onclick="exportarAlunosActivos()">
                 <i class="fas fa-download"></i>
                 Exportar
             </button>
@@ -109,12 +79,12 @@
 
                 <div>
                     <h4>Pagamentos em Atraso</h4>
-                    <p>Alunos com propinas pendentes • Junho 2026</p>
+                    <p id="descRelatorio3">Alunos com propinas pendentes</p>
                 </div>
 
             </div>
 
-            <button class="btn-exportar">
+            <button class="btn-exportar" onclick="exportarPagamentosAtraso()">
                 <i class="fas fa-download"></i>
                 Exportar
             </button>
@@ -131,12 +101,12 @@
 
                 <div>
                     <h4>Bolsas de Estudo</h4>
-                    <p>Descontos concedidos por aluno • Junho 2026</p>
+                    <p id="descRelatorio4">Descontos concedidos por aluno</p>
                 </div>
 
             </div>
 
-            <button class="btn-exportar">
+            <button class="btn-exportar" onclick="exportarBolsas()">
                 <i class="fas fa-download"></i>
                 Exportar
             </button>
@@ -146,3 +116,280 @@
     </div>
 
 </div>
+
+<script>
+
+// Cache de dados usados pelos relatórios
+let _todosAlunos = [];
+let _todosPagamentos = [];
+
+const NOMES_MESES = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+function iniciarPaginaRelatorios() {
+    atualizarDescricoes();
+    carregarGraficoReceita();
+}
+
+iniciarPaginaRelatorios();
+
+function atualizarDescricoes() {
+    const hoje = new Date();
+    const mesAno = NOMES_MESES[hoje.getMonth() + 1] + ' ' + hoje.getFullYear();
+    document.getElementById('descRelatorio1').textContent = 'Resumo financeiro do mês corrente • ' + mesAno;
+    document.getElementById('descRelatorio2').textContent = 'Listagem completa por curso • ' + mesAno;
+    document.getElementById('descRelatorio3').textContent = 'Alunos com propinas pendentes • ' + mesAno;
+    document.getElementById('descRelatorio4').textContent = 'Descontos concedidos por aluno • ' + mesAno;
+}
+
+// ---------- GRÁFICO: Receita Esperada vs Real (últimos 6 meses) ----------
+
+async function carregarGraficoReceita() {
+    document.getElementById('loadingChart').classList.add('active');
+    try {
+        const response = await axios.get(API_BASE + 'pagamentos/');
+        _todosPagamentos = response.data.results || response.data;
+
+        const meses = ultimosSeisMeses();
+
+        const dadosPorMes = meses.map(({ mes, ano }) => {
+            const doMes = _todosPagamentos.filter(p => p.mes === mes && p.ano === ano);
+            const esperada = doMes.reduce((soma, p) => soma + (parseFloat(p.valor_propina) || 0), 0);
+            const real = doMes.reduce((soma, p) => soma + (parseFloat(p.valor_pago) || 0), 0);
+            return { mes, ano, esperada, real };
+        });
+
+        renderizarGrafico(dadosPorMes);
+    } catch (error) {
+        console.error('Erro ao carregar dados do gráfico:', error);
+        mostrarMensagem('mensagemRelatorios', 'Erro ao carregar dados do gráfico', 'error');
+    } finally {
+        document.getElementById('loadingChart').classList.remove('active');
+    }
+}
+
+function ultimosSeisMeses() {
+    const hoje = new Date();
+    const lista = [];
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+        lista.push({ mes: d.getMonth() + 1, ano: d.getFullYear() });
+    }
+    return lista;
+}
+
+function renderizarGrafico(dadosPorMes) {
+    const container = document.getElementById('chartContainer');
+    container.innerHTML = '';
+
+    const maiorValor = Math.max(
+        1,
+        ...dadosPorMes.map(d => Math.max(d.esperada, d.real))
+    );
+
+    dadosPorMes.forEach(d => {
+        const alturaEsperada = Math.round((d.esperada / maiorValor) * 100);
+        const alturaReal = Math.round((d.real / maiorValor) * 100);
+
+        const grupo = document.createElement('div');
+        grupo.className = 'chart-bar-group';
+        grupo.innerHTML = `
+            <div class="bar esperada" style="height: ${alturaEsperada}%;" title="Esperada: ${formatarKz(d.esperada)}"></div>
+            <div class="bar real" style="height: ${alturaReal}%;" title="Real: ${formatarKz(d.real)}"></div>
+            <span>${NOMES_MESES[d.mes]}</span>
+        `;
+        container.appendChild(grupo);
+    });
+
+    if (dadosPorMes.every(d => d.esperada === 0 && d.real === 0)) {
+        container.innerHTML = '<p style="text-align:center; padding: 20px; width: 100%;">Sem dados de pagamentos para mostrar.</p>';
+    }
+}
+
+function formatarKz(valor) {
+    return valor.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Kz';
+}
+
+// ---------- HELPERS DE DADOS ----------
+
+async function buscarTodosAlunos() {
+    const response = await axios.get(API_BASE + 'alunos/');
+    _todosAlunos = response.data.results || response.data;
+    return _todosAlunos;
+}
+
+async function buscarTodosPagamentos() {
+    const response = await axios.get(API_BASE + 'pagamentos/');
+    _todosPagamentos = response.data.results || response.data;
+    return _todosPagamentos;
+}
+
+// ---------- EXPORTAÇÃO CSV ----------
+
+function baixarCSV(nomeArquivo, cabecalhos, linhas) {
+    const escapar = (valor) => {
+        const texto = (valor === null || valor === undefined) ? '' : String(valor);
+        if (texto.includes(';') || texto.includes('"') || texto.includes('\n')) {
+            return '"' + texto.replace(/"/g, '""') + '"';
+        }
+        return texto;
+    };
+
+    const conteudo = [cabecalhos, ...linhas]
+        .map(linha => linha.map(escapar).join(';'))
+        .join('\n');
+
+    // BOM para acentos abrirem corretamente no Excel
+    const blob = new Blob(['\uFEFF' + conteudo], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nomeArquivo;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+async function exportarReceitaMensal() {
+    try {
+        await buscarTodosPagamentos();
+        const hoje = new Date();
+        const mesAtual = hoje.getMonth() + 1;
+        const anoAtual = hoje.getFullYear();
+
+        const doMes = _todosPagamentos.filter(p => p.mes === mesAtual && p.ano === anoAtual);
+
+        if (doMes.length === 0) {
+            mostrarMensagem('mensagemRelatorios', 'Nenhum pagamento encontrado para o mês corrente', 'error');
+            return;
+        }
+
+        const linhas = doMes.map(p => [
+            p.aluno_nome,
+            p.mes + '/' + p.ano,
+            (parseFloat(p.valor_propina) || 0).toFixed(2),
+            (parseFloat(p.valor_pago) || 0).toFixed(2),
+            p.data_pagamento || '-',
+            p.metodo_pagamento || '-',
+        ]);
+
+        baixarCSV(
+            `receita_mensal_${mesAtual}_${anoAtual}.csv`,
+            ['Aluno', 'Mês/Ano', 'Propina', 'Pago', 'Data', 'Método'],
+            linhas
+        );
+
+        mostrarMensagem('mensagemRelatorios', 'Relatório de receita mensal exportado', 'success');
+    } catch (error) {
+        console.error('Erro ao exportar receita mensal:', error);
+        mostrarMensagem('mensagemRelatorios', 'Erro ao exportar relatório', 'error');
+    }
+}
+
+async function exportarAlunosActivos() {
+    try {
+        await buscarTodosAlunos();
+        const activos = _todosAlunos.filter(a => a.estado === 'ACTIVO');
+
+        if (activos.length === 0) {
+            mostrarMensagem('mensagemRelatorios', 'Nenhum aluno activo encontrado', 'error');
+            return;
+        }
+
+        const linhas = activos.map(a => [
+            a.numero_aluno,
+            a.nome,
+            a.turma_nome || '-',
+            a.curso_nome || '-',
+            a.bolsa_nome || '-',
+            a.sexo || '-',
+            a.telefone_encarregado || '-',
+        ]);
+
+        baixarCSV(
+            'alunos_activos.csv',
+            ['Número', 'Nome', 'Turma', 'Curso', 'Bolsa', 'Sexo', 'Telefone Encarregado'],
+            linhas
+        );
+
+        mostrarMensagem('mensagemRelatorios', 'Relatório de alunos activos exportado', 'success');
+    } catch (error) {
+        console.error('Erro ao exportar alunos activos:', error);
+        mostrarMensagem('mensagemRelatorios', 'Erro ao exportar relatório', 'error');
+    }
+}
+
+async function exportarPagamentosAtraso() {
+    try {
+        await buscarTodosPagamentos();
+        const atrasados = _todosPagamentos.filter(p => {
+            const propina = parseFloat(p.valor_propina) || 0;
+            const pago = parseFloat(p.valor_pago) || 0;
+            return pago < propina;
+        });
+
+        if (atrasados.length === 0) {
+            mostrarMensagem('mensagemRelatorios', 'Nenhum pagamento em atraso encontrado', 'success');
+            return;
+        }
+
+        const linhas = atrasados.map(p => [
+            p.aluno_nome,
+            p.mes + '/' + p.ano,
+            (parseFloat(p.valor_propina) || 0).toFixed(2),
+            (parseFloat(p.valor_pago) || 0).toFixed(2),
+            ((parseFloat(p.valor_propina) || 0) - (parseFloat(p.valor_pago) || 0)).toFixed(2),
+        ]);
+
+        baixarCSV(
+            'pagamentos_em_atraso.csv',
+            ['Aluno', 'Mês/Ano', 'Propina', 'Pago', 'Em Falta'],
+            linhas
+        );
+
+        mostrarMensagem('mensagemRelatorios', 'Relatório de pagamentos em atraso exportado', 'success');
+    } catch (error) {
+        console.error('Erro ao exportar pagamentos em atraso:', error);
+        mostrarMensagem('mensagemRelatorios', 'Erro ao exportar relatório', 'error');
+    }
+}
+
+async function exportarBolsas() {
+    try {
+        await buscarTodosAlunos();
+        const comBolsa = _todosAlunos.filter(a => a.bolsa_nome);
+
+        if (comBolsa.length === 0) {
+            mostrarMensagem('mensagemRelatorios', 'Nenhum aluno com bolsa encontrado', 'error');
+            return;
+        }
+
+        const linhas = comBolsa.map(a => [
+            a.numero_aluno,
+            a.nome,
+            a.turma_nome || '-',
+            a.curso_nome || '-',
+            a.bolsa_nome,
+        ]);
+
+        baixarCSV(
+            'bolsas_de_estudo.csv',
+            ['Número', 'Nome', 'Turma', 'Curso', 'Bolsa'],
+            linhas
+        );
+
+        mostrarMensagem('mensagemRelatorios', 'Relatório de bolsas exportado', 'success');
+    } catch (error) {
+        console.error('Erro ao exportar bolsas:', error);
+        mostrarMensagem('mensagemRelatorios', 'Erro ao exportar relatório', 'error');
+    }
+}
+
+function mostrarMensagem(elementId, mensagem, tipo) {
+    const elemento = document.getElementById(elementId);
+    if (!elemento) return;
+    elemento.className = tipo;
+    elemento.innerHTML = mensagem;
+}
+
+</script>
