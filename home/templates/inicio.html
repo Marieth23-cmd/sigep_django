@@ -8,37 +8,37 @@
 
         <div class="kpi-card">
             <h4>Alunos Activos</h4>
-            <span>0</span>
+        <span id="kpiAlunos">0</span>
             <small>+0%</small>
         </div>
 
         <div class="kpi-card">
             <h4>Alunos Pagos</h4>
-            <span>0</span>
+            <span id="kpiPagos">0</span>
             <small>+0%</small>
         </div>
 
         <div class="kpi-card">
             <h4>Alunos em Falta</h4>
-            <span>0</span>
+            <span id="kpiFalta">0</span>
             <small>+0%</small>
         </div>
 
         <div class="kpi-card">
             <h4>Receita Esperada</h4>
-            <span>0 Kz</span>
+            <span id="kpiEsperada">0 Kz</span>
             <small>+0%</small>
         </div>
 
         <div class="kpi-card">
             <h4>Receita Real</h4>
-            <span>0 Kz</span>
+            <span id="kpiReal">0 Kz</span>
             <small>+0%</small>
         </div>
 
         <div class="kpi-card">
             <h4>Taxa de Pagamento</h4>
-            <span>0%</span>
+            <span id="kpiTaxa">0%</span>
             <small>+0%</small>
         </div>
 
@@ -239,3 +239,85 @@
     </div>
 
 </div>
+
+
+
+<script>
+
+document.addEventListener('DOMContentLoaded', () => {
+    carregarDashboard();
+});
+
+async function carregarDashboard() {
+
+    const hoje = new Date();
+    const mes = hoje.getMonth() + 1;
+    const ano = hoje.getFullYear();
+
+    try {
+
+        const [
+            alunosResp,
+            pagamentosResp,
+            resumoResp
+        ] = await Promise.all([
+            axios.get(API_BASE + 'alunos/'),
+            axios.get(API_BASE + 'pagamentos/'),
+            axios.get(API_BASE + `pagamentos/resumo/?mes=${mes}&ano=${ano}`)
+        ]);
+
+        const alunos =
+            alunosResp.data.results || alunosResp.data;
+
+        const pagamentos =
+            pagamentosResp.data.results || pagamentosResp.data;
+
+        const resumo = resumoResp.data;
+
+        document.getElementById('kpiAlunos').textContent =
+            resumo.total_alunos;
+
+        document.getElementById('kpiPagos').textContent =
+            resumo.pagos;
+
+        document.getElementById('kpiFalta').textContent =
+            resumo.em_falta;
+
+        let receitaEsperada = 0;
+
+        alunos.forEach(aluno => {
+            receitaEsperada +=
+                parseFloat(aluno.propina_mensal || 0);
+        });
+
+        let receitaReal = 0;
+
+        pagamentos
+            .filter(
+                p => p.mes === mes && p.ano === ano
+            )
+            .forEach(p => {
+                receitaReal +=
+                    parseFloat(p.valor_pago || 0);
+            });
+
+        document.getElementById('kpiEsperada').textContent =
+            receitaEsperada.toLocaleString('pt-PT') + ' Kz';
+
+        document.getElementById('kpiReal').textContent =
+            receitaReal.toLocaleString('pt-PT') + ' Kz';
+
+        const taxa =
+            resumo.total_alunos > 0
+            ? ((resumo.pagos / resumo.total_alunos) * 100).toFixed(1)
+            : 0;
+
+        document.getElementById('kpiTaxa').textContent =
+            taxa + '%';
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+</script>
